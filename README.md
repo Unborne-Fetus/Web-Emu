@@ -34,13 +34,23 @@ Use the game's regular in-game **Save** option. The mGBA wrapper can persist bat
 
 Save states are separate from the game's battery save. Export any important save-state backup, and avoid relying on unverified automatic persistence.
 
+## Experimental standalone offline build
+
+GitHub Actions now attempts to generate **Web-Emu-Offline**, containing one `index.html` with mGBA JavaScript and WebAssembly embedded. This file is designed to be **double-clicked without an internet connection or local web server**.
+
+To get it, open the repository's **Actions → Deploy Web Emu** workflow, select a successful run, and download the **Web-Emu-Offline** artifact. Extract the ZIP and double-click its `index.html`. Do not use the root repository `index.html` for offline testing; that source launcher can still depend on CDN files.
+
+The offline build uses a compatibility audio path when browsers block AudioWorklets on `file://`. That path uses the legacy ScriptProcessor API, which is not guaranteed on every future browser. **This distribution is experimental: real GBA ROM boot, sound, speed switching, and battery-save restoration have not been verified across browsers.** Browser storage on local files is inconsistent. Export a `.sav` backup before closing important sessions.
+
+If the offline artifact is missing, inspect the "Build standalone offline index" Actions step for its error; a successful website deployment does not guarantee the optional offline build succeeded.
+
 ## Offline roadmap
 
 The project is moving toward two distribution formats:
 
 | Format | Intended result | Status |
 | --- | --- | --- |
-| **Single `index.html`** | Double-click without installing anything; all emulator code embedded for true offline play | **Not yet available** |
+| **Single `index.html`** | Embedded JavaScript and WASM, double-click offline | **Experimental Actions artifact; not boot-verified** |
 | **Offline folder** | `index.html` plus bundled local JavaScript and WebAssembly files; no CDN needed | **Local-loading path prepared; core files not yet vendored** |
 | Hosted website | Open through HTTPS, with persistent browser storage where supported | **Early alpha** |
 
