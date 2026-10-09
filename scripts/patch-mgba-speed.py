@@ -8,11 +8,11 @@ def replace_once(before,after):
     if s.count(before)!=1:
         raise RuntimeError(f"SDK changed; expected one match for {before[:70]!r}, got {s.count(before)}")
     s=s.replace(before,after)
-replace_once("  let coreRate = 0;","  let coreRate = 0;\n  let speedMultiplier = 1;")
+replace_once("  let coreRate = 0;","  let coreRate = 0;\n  let speedMultiplier = 1;\n  let autoSaveEnabled = true;\n  let lastDrawTime = 0;")
 replace_once("sink.port.postMessage({ rate });","sink.port.postMessage({ rate: rate * speedMultiplier });")
-replace_once("const MAX_FRAMES_PER_TICK = 5;","const MAX_FRAMES_PER_TICK = 128;")
+replace_once("const MAX_FRAMES_PER_TICK = 5;","const MAX_FRAMES_PER_TICK = 96;")
 replace_once("Math.round(rate * TARGET_SECONDS) - buffered","Math.round(rate * speedMultiplier * TARGET_SECONDS) - buffered")
-replace_once("const perEmulatedFrame = rate / framerate;","const perEmulatedFrame = rate / framerate;")
+
 replace_once("Math.floor(((now - wallClockStart) / 1000) * framerate)","Math.floor(((now - wallClockStart) / 1000) * framerate * speedMultiplier)")
 replace_once("  const instance: MgbaInstance = {","  const instance: MgbaInstance & { setSpeed(multiplier: number): void } = {\n    setSpeed(multiplier: number) {\n      speedMultiplier = Math.max(1, Math.min(32, Math.round(multiplier)));\n      const rate = syncCoreRate();\n      if (rate) sink.port.postMessage({ rate: rate * speedMultiplier });\n      // Restart wall-clock fallback when switching speed.\n      wallClockStart = 0;\n    },")
 
@@ -30,7 +30,7 @@ replace_once(
     "  const instance: MgbaInstance & { setSpeed(multiplier: number): void; flushSave(): Promise<void>; exportSave(): Uint8Array; importSave(bytes: Uint8Array): Promise<void> } = {\n    async flushSave() { await persistSram(); },\n    exportSave() { const data = cloneSram(); if (!data) throw new Error('No battery save available'); return data; },\n    async importSave(data: Uint8Array) {\n      if (!data.length) throw new Error('Empty save file');\n      const ptr = heapAlloc(mod, data);\n      try { if (!mod._mgbawasm_sram_load(ptr, data.length)) throw new Error('Incompatible save file'); }\n      finally { mod._free(ptr); }\n      await persistSram();\n    },"
 )
 
-replace_once("setInterval(() => void persistSram(), 15000)", "setInterval(() => void persistSram().catch(console.warn), 15000)")
-replace_once("void persistSram();", "void persistSram().catch(console.warn);") if s.count("void persistSram();") == 1 else None
-p.write_text(s)
+replace_once("setInterval(() => void persistSram(), 15000)", "setInterval(() => { if (autoSaveEnabled) void persistSram().catch(console.warn); }, 15000)")
+replace_once("void persistSram();", "if (autoSaveEnabled) void persistSram().catch(console.warn);")
+replace_once("      renderFrame();\n    }\n\n    if (!fpsWindowStart)", "      if (speedMultiplier <= 2 || now - lastDrawTime >= (speedMultiplier <= 4 ? 32 : 65)) {\n        renderFrame();\n        lastDrawTime = now;\n      }\n    }\n\n    if (!fpsWindowStart)")\np.write_text(s)
 print("mGBA browser SDK patched successfully")
