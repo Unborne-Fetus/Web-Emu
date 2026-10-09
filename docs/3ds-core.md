@@ -13,3 +13,7 @@ The loader handles `.3ds`, `.cci`, and `.cxi` cartridge images. `.cia` packages 
 **Do not put placeholder renderers in `cores/3ds.js` and advertise them as emulation.** Once a real browser engine is built and legally distributable, supply the module and appropriate binaries under `cores/`, respecting its open-source licensing and notices. The GitHub Pages workflow currently publishes that directory unchanged.
 
 Existing GB/GBC/GBA via mGBA is unaffected.
+
+## WebAssembly feasibility experiment
+
+Run **Actions → 3DS WebAssembly Port Feasibility → Run workflow** to probe Emscripten/CMake configuration against a fresh Azahar checkout. The diagnostic artifact reports CMake blockers. This is deliberately isolated from the Pages build. A successful configuration would **not** establish that the emulator compiles, boots ROMs or runs in browsers. Work remains on platform dependencies, GPU rendering, input/audio threading and the `create3dsEmulator` adapter. No game binaries or console keys are included.
