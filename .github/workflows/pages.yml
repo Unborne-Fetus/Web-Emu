@@ -34,6 +34,27 @@ jobs:
           curl -fLsS https://cdn.jsdelivr.net/npm/@wasm-gaming/mgba-wasm@0.1.1/dist/mgba/mgba.js -o vendor/mgba.js
           curl -fLsS https://cdn.jsdelivr.net/npm/@wasm-gaming/mgba-wasm@0.1.1/dist/mgba/mgba.wasm -o vendor/mgba.wasm
           test -s vendor/mgba-sdk.js && test -s vendor/mgba.wasm && test -s vendor/mgba.js
+      - name: Build standalone offline index
+        if: steps.corebuild.outcome == 'success'
+        id: offline
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          python3 scripts/patch-mgba-offline.py
+          ./node_modules/.bin/esbuild upstream/src/mgba.sdk.ts --bundle --format=iife --global-name=WebEmuMgba --platform=browser --target=es2022 --outfile=vendor/mgba-sdk-offline.js
+          python3 scripts/build-offline.py
+          test -s dist-offline/index.html
+      - name: Upload offline index (double-clickable)
+        if: steps.offline.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Web-Emu-Offline
+          path: dist-offline/index.html
+          if-no-files-found: error
+          compression-level: 0
+      - name: Report offline build problems
+        if: steps.corebuild.outcome == 'success' && steps.offline.outcome == 'failure'
+        run: echo '::warning::Offline build failed. Check the offline build step logs.'
       - name: Remove incomplete core on build failure
         if: steps.corebuild.outcome == 'failure'
         run: |
