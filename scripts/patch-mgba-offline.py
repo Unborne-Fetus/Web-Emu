@@ -24,7 +24,7 @@ before = """  const workletUrl = URL.createObjectURL(
     numberOfOutputs: 1,
     outputChannelCount: [2],
   });"""
-after = """  let sink: AudioWorkletNode | (ScriptProcessorNode & {port: {postMessage: (message: unknown, transfer?: Transferable[]) => void}});
+after = """  let sink: any;
   if (location.protocol !== 'file:' && audioCtx.audioWorklet) {
     try {
       const workletUrl = URL.createObjectURL(
@@ -84,7 +84,7 @@ function createFallbackAudio(ctx: AudioContext): ScriptProcessorNode & {
       }
     },
   };
-  node.onaudioprocess = (event) => {
+  node.onaudioprocess = (event: AudioProcessingEvent) => {
     const l = event.outputBuffer.getChannelData(0);
     const r = event.outputBuffer.getChannelData(1);
     for (let i = 0; i < l.length; i++) {
