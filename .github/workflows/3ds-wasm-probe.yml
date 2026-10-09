@@ -41,7 +41,7 @@ jobs:
                   INTERFACE_INCLUDE_DIRECTORIES "INCLUDE_DIRECTORY")
           endif()
           """.replace('INCLUDE_DIRECTORY', include_dir)
-          cmake.write_text(text.replace(anchor, anchor + '\\n' + fallback, 1))
+          cmake.write_text(text.replace(anchor, anchor + '\n' + fallback, 1))
           PY
       - name: Probe CMake WebAssembly configuration
         shell: bash
