@@ -10,11 +10,13 @@ def replace_once(before,after):
     s=s.replace(before,after)
 replace_once("  let coreRate = 0;","  let coreRate = 0;\n  let speedMultiplier = 1;\n  let autoSaveEnabled = true;\n  let lastDrawTime = 0;")
 replace_once("sink.port.postMessage({ rate });","sink.port.postMessage({ rate: rate * speedMultiplier });")
-replace_once("const MAX_FRAMES_PER_TICK = 5;","const MAX_FRAMES_PER_TICK = 96;")
+# Reset worklet buffers on every speed transition: stale 32× audio must not poison 1× pacing.
+replace_once("      if (msg && msg.rate) {", "      if (msg && msg.reset) {\\n        this.pos = 0; this.w = 0; this.lastPost = 0;\\n        return;\\n      }\\n      if (msg && msg.rate) {")
+replace_once("const MAX_FRAMES_PER_TICK = 5;","const MAX_FRAMES_PER_TICK = 24;")
 replace_once("Math.round(rate * TARGET_SECONDS) - buffered","Math.round(rate * speedMultiplier * TARGET_SECONDS) - buffered")
 
 replace_once("Math.floor(((now - wallClockStart) / 1000) * framerate)","Math.floor(((now - wallClockStart) / 1000) * framerate * speedMultiplier)")
-replace_once("  const instance: MgbaInstance = {","  const instance: MgbaInstance & { setSpeed(multiplier: number): void } = {\n    setSpeed(multiplier: number) {\n      speedMultiplier = Math.max(1, Math.min(32, Math.round(multiplier)));\n      const rate = syncCoreRate();\n      if (rate) sink.port.postMessage({ rate: rate * speedMultiplier });\n      // Restart wall-clock fallback when switching speed.\n      wallClockStart = 0;\n    },")
+replace_once("  const instance: MgbaInstance = {","  const instance: MgbaInstance & { setSpeed(multiplier: number): void } = {\n    setSpeed(multiplier: number) {\n      const nextSpeed = Math.max(1, Math.min(32, Math.round(multiplier)));\n      if (nextSpeed === speedMultiplier) return;\n      speedMultiplier = nextSpeed;\n      // Discard high-speed samples and reset counters as one transition.\n      enqueuedFrames = 0; consumedFrames = 0;\n      sink.port.postMessage({ reset: true });\n      const rate = syncCoreRate();\n      if (rate) sink.port.postMessage({ rate: rate * speedMultiplier });\n      wallClockStart = 0; wallClockFrames = 0;\n      audioClockWall = performance.now();\n      lastDrawTime = 0;\n    },")
 
 # Expose verified SRAM flushing and portable battery save backup.
 replace_once(
