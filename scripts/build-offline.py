@@ -27,7 +27,7 @@ if html.count('<script>') < 1:
     raise RuntimeError("Missing launcher script")
 html = html.replace('<script>\\nconst BUILD_VERSION=', bootstrap + '<script>\\nconst BUILD_VERSION=', 1)
 # Detect variants where the launcher starts directly with the version constant.
-if "window.__WEB_EMU_OFFLINE__" not in html:
+if html.count("window.__WEB_EMU_OFFLINE__ = {wasmUrl:") != 1:
     raise RuntimeError("Failed to inject offline runtime")
 out = root / "dist-offline"
 out.mkdir(exist_ok=True)
