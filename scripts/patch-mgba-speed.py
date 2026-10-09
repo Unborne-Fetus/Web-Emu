@@ -19,16 +19,18 @@ replace_once("  const instance: MgbaInstance = {","  const instance: MgbaInstanc
 # Expose verified SRAM flushing and portable battery save backup.
 replace_once(
     "  const persistSram = async (): Promise<void> => {",
-    "  let persistQueue = Promise.resolve();\\n  const persistSram = async (): Promise<void> => {"
+    "  let persistQueue = Promise.resolve();\n  const persistSram = async (): Promise<void> => {"
 )
 replace_once(
-    "    if (!persistEnabled) return;\\n    const bytes = cloneSram();\\n    if (!bytes) return;\\n    const dir = await opfsDir(namespace, true);\\n    if (!dir) return;\\n    try {\\n      const handle = await dir.getFileHandle('sram.bin', { create: true });\\n      const writable = await handle.createWritable();\\n      await writable.write(bytes);\\n      await writable.close();\\n    } catch {\\n      // persistence is best-effort\\n    }",
-    "    if (!persistEnabled) return;\\n    const bytes = cloneSram();\\n    if (!bytes) throw new Error('Battery save data unavailable');\\n    const write = async () => {\\n      const dir = await opfsDir(namespace, true);\\n      if (!dir) throw new Error('Browser save storage unavailable');\\n      const handle = await dir.getFileHandle('sram.bin', { create: true });\\n      const writable = await handle.createWritable();\\n      try { await writable.write(bytes); await writable.close(); }\\n      catch (e) { await writable.abort().catch(() => {}); throw e; }\\n    };\\n    const next = persistQueue.then(write);\\n    persistQueue = next.catch(() => {});\\n    return next;"
+    "    if (!persistEnabled) return;\n    const bytes = cloneSram();\n    if (!bytes) return;\n    const dir = await opfsDir(namespace, true);\n    if (!dir) return;\n    try {\n      const handle = await dir.getFileHandle('sram.bin', { create: true });\n      const writable = await handle.createWritable();\n      await writable.write(bytes);\n      await writable.close();\n    } catch {\n      // persistence is best-effort\n    }",
+    "    if (!persistEnabled) return;\n    const bytes = cloneSram();\n    if (!bytes) throw new Error('Battery save data unavailable');\n    const write = async () => {\n      const dir = await opfsDir(namespace, true);\n      if (!dir) throw new Error('Browser save storage unavailable');\n      const handle = await dir.getFileHandle('sram.bin', { create: true });\n      const writable = await handle.createWritable();\n      try { await writable.write(bytes); await writable.close(); }\n      catch (e) { await writable.abort().catch(() => {}); throw e; }\n    };\n    const next = persistQueue.then(write);\n    persistQueue = next.catch(() => {});\n    return next;"
 )
 replace_once(
     "  const instance: MgbaInstance & { setSpeed(multiplier: number): void } = {",
-    "  const instance: MgbaInstance & { setSpeed(multiplier: number): void; flushSave(): Promise<void>; exportSave(): Uint8Array; importSave(bytes: Uint8Array): Promise<void> } = {\\n    async flushSave() { await persistSram(); },\\n    exportSave() { const data = cloneSram(); if (!data) throw new Error('No battery save available'); return data; },\\n    async importSave(data: Uint8Array) {\\n      if (!data.length) throw new Error('Empty save file');\\n      const ptr = heapAlloc(mod, data);\\n      try { if (!mod._mgbawasm_sram_load(ptr, data.length)) throw new Error('Incompatible save file'); }\\n      finally { mod._free(ptr); }\\n      await persistSram();\\n    },"
+    "  const instance: MgbaInstance & { setSpeed(multiplier: number): void; flushSave(): Promise<void>; exportSave(): Uint8Array; importSave(bytes: Uint8Array): Promise<void> } = {\n    async flushSave() { await persistSram(); },\n    exportSave() { const data = cloneSram(); if (!data) throw new Error('No battery save available'); return data; },\n    async importSave(data: Uint8Array) {\n      if (!data.length) throw new Error('Empty save file');\n      const ptr = heapAlloc(mod, data);\n      try { if (!mod._mgbawasm_sram_load(ptr, data.length)) throw new Error('Incompatible save file'); }\n      finally { mod._free(ptr); }\n      await persistSram();\n    },"
 )
 
+replace_once("setInterval(() => void persistSram(), 15000)", "setInterval(() => void persistSram().catch(console.warn), 15000)")
+replace_once("void persistSram();", "void persistSram().catch(console.warn);") if s.count("void persistSram();") == 1 else None
 p.write_text(s)
 print("mGBA browser SDK patched successfully")
