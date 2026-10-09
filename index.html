@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Web Emu — GBA</title>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Web Emu — GBA</title>
 <style>
 :root{color-scheme:dark;font-family:system-ui;background:#080506;color:#f9e9eb}*{box-sizing:border-box}body{margin:0;padding:clamp(12px,3vw,32px)}main{max-width:1050px;margin:auto}header{display:flex;justify-content:space-between;margin:0 0 16px;font-weight:800;letter-spacing:.14em}small,.muted{color:#bf9ba3;font-size:12px}.stage{position:relative;border:1px solid #62212e;border-radius:15px;overflow:hidden;background:#17080d}.screen{position:relative;aspect-ratio:3/2;display:grid;place-items:center;background:#080507}.screen canvas{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}.empty{position:absolute;inset:0;background:radial-gradient(circle,#46101e,#080407);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:16px}.empty[hidden],.menu[hidden],.save-indicator[hidden],.save-warning[hidden]{display:none}
 .save-indicator{position:absolute;bottom:68px;right:14px;z-index:7;display:flex;align-items:center;gap:9px;padding:8px 12px;background:#260a15eb;border:1px solid #a63451;border-radius:10px;font-size:12px;color:#fff;pointer-events:none}
@@ -17,15 +17,63 @@
 .stage:fullscreen .screen{flex:1 1 auto;position:relative;width:100%;height:100%;min-width:0;min-height:0;max-height:100%;overflow:hidden}
 .stage:fullscreen .screen canvas{width:100%;height:100%;object-fit:contain;object-position:center center}
 @media(max-height:500px){.screen{height:min(66.6667vw,calc(100dvh - 95px))}}
+
+/* Cross-platform responsive layout: desktop, tablet, phone, and landscape. */
+html{min-width:0;overflow-x:hidden}body{min-width:0;padding:clamp(6px,2vw,24px);padding-left:max(clamp(6px,2vw,24px),env(safe-area-inset-left));padding-right:max(clamp(6px,2vw,24px),env(safe-area-inset-right))}
+main{width:100%;max-width:1200px;min-width:0}header{gap:10px;align-items:center;flex-wrap:wrap;font-size:clamp(12px,2.2vw,16px)}
+.stage{min-width:0}.screen{width:100%;height:min(calc((100vw - 48px)*2/3),calc(100dvh - 170px));min-height:160px}
+.bar{min-width:0}.bar label,.speed-wrap{flex:0 1 auto;min-width:0}.bar input{min-width:70px;max-width:100%}
+.menu{max-width:calc(100% - 16px);max-height:min(calc(100dvh - 90px),680px);overscroll-behavior:contain;overflow-y:auto}
+.save-warning{max-height:calc(100% - 24px);overflow-y:auto}.save-indicator{max-width:calc(100% - 20px)}
+button,input,summary{touch-action:manipulation}button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid #ff7594;outline-offset:2px}
+.touch{align-items:center;flex-wrap:wrap;gap:clamp(8px,2vw,20px);padding:max(10px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}
+.touch .pad,.touch .ab{flex-shrink:0}.touch button{user-select:none;-webkit-user-select:none}
+.stage:fullscreen{width:100%;height:100%;height:100dvh;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+.stage:fullscreen .screen{height:0;min-height:0;flex:1 1 auto}.stage:fullscreen .bar{bottom:max(0px,env(safe-area-inset-bottom));padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right))}
+.stage:fullscreen .corner{top:max(12px,env(safe-area-inset-top))}.stage:fullscreen .left{left:max(12px,env(safe-area-inset-left))}.stage:fullscreen .right{right:max(12px,env(safe-area-inset-right))}
+.stage:fullscreen .menu{top:calc(64px + env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right));max-height:calc(100dvh - 90px - env(safe-area-inset-bottom))}
+@media(max-width:650px){
+ header>small{display:none}
+ .screen{height:min(calc((100vw - 16px)*2/3),calc(100dvh - 175px));min-height:0}
+ .bar{padding:9px 10px;gap:8px}.bar input{width:clamp(65px,20vw,130px)}
+ .bar output{min-width:27px}.speed-wrap{gap:4px}.bar label{gap:4px}
+ .menu{top:58px;right:8px;width:min(360px,calc(100% - 16px));padding:12px}
+ .corner{top:8px;min-width:44px;min-height:44px}.corner.left{left:8px}.corner.right{right:8px}
+ .touch{display:flex}
+}
+@media(max-width:350px){
+ .bar{flex-wrap:wrap}.bar label{margin-left:auto}
+ .touch{justify-content:center}.pad{grid-template-columns:repeat(3,36px)}.ab{grid-template-columns:repeat(2,45px)}
+ .touch button{min-width:0;padding:8px}
+}
+@media(pointer:coarse){
+ .touch{display:flex}
+ .stage:fullscreen .touch{display:flex;flex:0 0 auto;background:#140810de;max-height:min(37dvh,230px);overflow:hidden}
+ .stage:fullscreen .touch button{min-height:44px}
+ .stage:fullscreen .bar{bottom:calc(min(37dvh,230px) + env(safe-area-inset-bottom))}
+ .stage:fullscreen .save-indicator{bottom:calc(min(37dvh,230px) + 60px)}
+}
+@media(pointer:coarse) and (orientation:landscape) and (max-height:560px){
+ .stage:fullscreen .touch{position:absolute;inset:0;z-index:2;max-height:none;pointer-events:none;background:transparent;justify-content:space-between;align-items:flex-end;padding:0 12px 10px}
+ .stage:fullscreen .touch button{pointer-events:auto;opacity:.8}
+ .stage:fullscreen .bar{bottom:0;z-index:5}
+ .stage:fullscreen .screen{height:100%}
+ .stage:fullscreen .save-indicator{bottom:62px}
+}
+@media(hover:none) and (pointer:coarse){
+ .stage:fullscreen .corner{opacity:1;pointer-events:auto}
+ .stage:fullscreen .bar{opacity:1;visibility:visible;pointer-events:auto}
+}
+@media(prefers-reduced-motion:reduce){.corner,.bar{transition:none!important}}
 </style><main><header><span>▣ WEB EMU <small>/ GBA</small></span><small>BROWSER EDITION</small></header>
 <section class="stage" id="stage"><button class="corner left" id="fullscreen" aria-label="Fullscreen">⛶</button><button class="corner right" id="settingsButton" aria-label="Settings" aria-expanded="false">⚙</button>
 <div class="screen" id="drop"><canvas id="game" width="240" height="160"></canvas><div class="empty" id="empty"><h1>Game Boy Advance</h1><p class="muted">Open a .gba game. No BIOS or installation needed.</p><button class="primary" id="open">Open file</button><small>or drag and drop a .gba file</small></div></div>
 <div id="saveIndicator" class="save-indicator" role="status" aria-live="polite" hidden><span class="spin">⟳</span><span id="saveIndicatorText">Saving…</span></div><div id="saveWarning" class="save-warning" hidden><strong>Automatic Saving</strong><p id="saveWarningText">Web Emu periodically stores your game’s battery save in your browser. Do not close the page while the saving symbol is visible. Browser storage can be cleared; export a .sav backup for important progress.</p><button id="dismissSaveWarning" type="button">Continue</button></div><div class="bar"><div class="speed-wrap"><button class="speed-label" id="speedLabel" aria-haspopup="true" aria-expanded="false">SPEED ▾</button><div class="speed-menu" id="speedMenu" hidden></div><input aria-label="Normal speed, 1 to 4 times" type="range" min="1" max="4" step="1" value="1" disabled title="Available when speed-enabled mGBA runtime loads" id="speed"> <output id="speedtext">1×</output></div><label aria-label="Volume">🔊 <input type="range" min="0" max="100" value="75" id="volume"><output id="voltext">75%</output></label></div>
 <div class="touch"><div class="pad"><button class="up" data-key="ArrowUp">↑</button><button class="leftkey" data-key="ArrowLeft">←</button><button class="rightkey" data-key="ArrowRight">→</button><button class="down" data-key="ArrowDown">↓</button></div><div class="ab"><button data-key="x">A</button><button data-key="z">B</button><button data-key="Enter">Start</button><button data-key="ShiftRight">Select</button><button data-key="a">L</button><button data-key="s">R</button></div></div>
 <div class="menu" id="menu" hidden><h2>Settings</h2><div class="actions"><button id="another">Open another file</button><button disabled id="pause">Pause</button><button disabled id="reset">Reset</button></div><hr><label><input type="checkbox" id="smooth"> Smooth pixels</label><hr><div class="actions"><button disabled id="saveState">Save state</button><button disabled id="loadState">Load state</button><button disabled id="exportState">Export state</button><button disabled id="importState">Import state</button><button disabled id="shot">Screenshot</button></div><hr><details><summary style="cursor:pointer;font-weight:700">Control options</summary><p>Click a button, then press the key you want. Escape cancels.</p><div id="keyBindings"></div><button id="resetKeys" type="button">Restore defaults</button></details><hr><label style="display:flex;align-items:center;gap:8px;margin:10px 0"><input id="autosave" type="checkbox" checked> Automatic battery saves (every 15 seconds)</label><div class="actions"><button id="flushSave" disabled>Save now</button><button id="exportSave" disabled>Export .sav</button><button id="importSave" disabled>Import .sav</button></div><div class="actions" style="margin-top:10px"><button id="deleteGameCache" type="button" disabled>Delete current game cache</button></div><p id="saveInfo">Checking browser save storage…</p><p>Use the game's normal Save function. mGBA automatically writes battery saves about every 15 seconds, and when paused or closed, if browser OPFS storage is available.</p><p>Keys: arrows / X (A) / Z (B) / A (L) / S (R) / Enter (Start) / Right Shift (Select). Gamepads are supported.</p></div></section>
-<p id="status" role="status">Build 2026-10-09.11 · Ready. Uses a local mGBA core if bundled; otherwise internet is required.</p><footer>Single-file launcher for your own .gba images. Offline core bundling is in progress. No ROM uploads. Browser file storage may be unavailable under file://; use a hosted HTTPS copy for dependable autosaves. <a href="https://github.com/wasm-gaming/mGBA-wasm">mGBA-WASM (MPL-2.0)</a>.</footer><input id="rom" type="file" accept=".gba" hidden><input id="batteryFile" type="file" accept=".sav,.srm" hidden><input id="stateFile" type="file" accept=".state,.bin" hidden></main>
+<p id="status" role="status">Build 2026-10-09.12 · Ready. Uses a local mGBA core if bundled; otherwise internet is required.</p><footer>Single-file launcher for your own .gba images. Offline core bundling is in progress. No ROM uploads. Browser file storage may be unavailable under file://; use a hosted HTTPS copy for dependable autosaves. <a href="https://github.com/wasm-gaming/mGBA-wasm">mGBA-WASM (MPL-2.0)</a>.</footer><input id="rom" type="file" accept=".gba" hidden><input id="batteryFile" type="file" accept=".sav,.srm" hidden><input id="stateFile" type="file" accept=".state,.bin" hidden></main>
 <script type="module">
-const BUILD_VERSION='2026-10-09.11';const $=id=>document.getElementById(id),say=m=>$('status').textContent=m,cdn='https://cdn.jsdelivr.net/npm/@wasm-gaming/mgba-wasm@0.1.1';let engine=null,sdk=null,localCore=false,paused=false,storage=false,filename='game',snapshot=null,request=0,controlsTimer=null,saveIndicatorTimer=null,saveWarningTimer=null;
+const BUILD_VERSION='2026-10-09.12';const $=id=>document.getElementById(id),say=m=>$('status').textContent=m,cdn='https://cdn.jsdelivr.net/npm/@wasm-gaming/mgba-wasm@0.1.1';let engine=null,sdk=null,localCore=false,paused=false,storage=false,filename='game',snapshot=null,request=0,controlsTimer=null,saveIndicatorTimer=null,saveWarningTimer=null;
 async function loadCore(){if(sdk)return sdk;if(window.__WEB_EMU_OFFLINE__&&globalThis.WebEmuMgba?.load){sdk=globalThis.WebEmuMgba;localCore=true;return sdk;}try{sdk=await import('./vendor/mgba-sdk.js');if(typeof sdk.load!=='function')throw Error('Local SDK missing load()');localCore=true;say('Using bundled local mGBA runtime');return sdk}catch(err){console.info('Bundled runtime unavailable; trying online fallback.',err);localCore=false;sdk=await import(cdn+'/+esm');return sdk}}
 async function checkStorage(){try{if(!navigator.storage?.getDirectory)throw Error('Unavailable');await navigator.storage.getDirectory();storage=true;$('saveInfo').textContent='Browser storage is accessible; save writes have not yet been verified.'}catch(e){storage=false;$('saveInfo').textContent='⚠ Browser autosaves are unavailable in this context. Open the site through HTTPS for reliable storage.'}}checkStorage();
 if(window.__WEB_EMU_OFFLINE__){say('Offline edition ready. Open a GBA ROM; no internet required. Browser save storage may vary.')}else if(location.protocol==='file:'){say('This source index.html needs internet and may fail audio under file://. Use the Offline HTML file from GitHub Actions.');}
