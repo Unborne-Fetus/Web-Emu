@@ -31,6 +31,7 @@ replace_once(
 )
 
 replace_once("setInterval(() => void persistSram(), 15000)", "setInterval(() => { if (autoSaveEnabled) void persistSram().catch(console.warn); }, 15000)")
-replace_once("      void persistSram();", "      if (autoSaveEnabled) void persistSram().catch(console.warn);")
+if s.count("      void persistSram();") != 2: raise RuntimeError("SDK save hooks changed")
+s=s.replace("      void persistSram();", "      if (autoSaveEnabled) void persistSram().catch(console.warn);")
 replace_once("      renderFrame();\n    }\n\n    if (!fpsWindowStart)", "      if (speedMultiplier <= 2 || now - lastDrawTime >= (speedMultiplier <= 4 ? 32 : 65)) {\n        renderFrame();\n        lastDrawTime = now;\n      }\n    }\n\n    if (!fpsWindowStart)")\np.write_text(s)
 print("mGBA browser SDK patched successfully")
