@@ -56,6 +56,18 @@ jobs:
             echo "Configure failed: inspect diagnostics to identify required platform adaptations."
           fi
           exit "$result"
+      - name: Compile 3DS core with Emscripten
+        if: success()
+        shell: bash
+        timeout-minutes: 25
+        run: |
+          set +e
+          echo "Available core targets:" | tee azahar-build.log
+          ninja -C azahar-wasm-build -t targets all | grep -E 'citra_core|video_core' | head -30 | tee -a azahar-build.log
+          cmake --build azahar-wasm-build --target citra_core --parallel 2 2>&1 | tee -a azahar-build.log
+          result=${PIPESTATUS[0]}
+          printf 'Core WebAssembly compilation exit code: %s\n' "$result" | tee azahar-build-result.txt
+          exit "$result"
       - name: Upload port diagnostics
         if: always()
         uses: actions/upload-artifact@v4
@@ -66,4 +78,6 @@ jobs:
             azahar-result.txt
             azahar-revision.txt
             azahar-submodules.txt
+            azahar-build.log
+            azahar-build-result.txt
           if-no-files-found: warn
