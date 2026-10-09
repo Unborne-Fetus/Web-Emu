@@ -29,7 +29,13 @@ replace_once(
 )
 replace_once(
     "  const instance: MgbaInstance & { setSpeed(multiplier: number): void } = {",
-    "  const instance: MgbaInstance & { setSpeed(multiplier: number): void; flushSave(): Promise<void>; exportSave(): Uint8Array; importSave(bytes: Uint8Array): Promise<void> } = {\n    async flushSave() { await persistSram(); },\n    exportSave() { const data = cloneSram(); if (!data) throw new Error('No battery save available'); return data; },\n    async importSave(data: Uint8Array) {\n      if (!data.length) throw new Error('Empty save file');\n      const ptr = heapAlloc(mod, data);\n      try { if (!mod._mgbawasm_sram_load(ptr, data.length)) throw new Error('Incompatible save file'); }\n      finally { mod._free(ptr); }\n      await persistSram();\n    },"
+    "  const instance: MgbaInstance & { setSpeed(multiplier: number): void; flushSave(): Promise<void>; exportSave(): Uint8Array; importSave(bytes: Uint8Array): Promise<void>; deleteGameCache(): Promise<void> } = {\n    async deleteGameCache() {
+      autoSaveEnabled = false;
+      await persistQueue;
+      const result = await this.purgeStorage();
+      if (!result.data) throw new Error('No cached data found for this game');
+    },
+    async flushSave() { await persistSram(); },\n    exportSave() { const data = cloneSram(); if (!data) throw new Error('No battery save available'); return data; },\n    async importSave(data: Uint8Array) {\n      if (!data.length) throw new Error('Empty save file');\n      const ptr = heapAlloc(mod, data);\n      try { if (!mod._mgbawasm_sram_load(ptr, data.length)) throw new Error('Incompatible save file'); }\n      finally { mod._free(ptr); }\n      await persistSram();\n    },"
 )
 
 replace_once("setInterval(() => void persistSram(), 15000)", "setInterval(() => { if (autoSaveEnabled) void persistSram().catch(console.warn); }, 15000)")
