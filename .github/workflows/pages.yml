@@ -18,6 +18,20 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build Web Emu mGBA SDK with speed control
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --branch v0.1.1 https://github.com/wasm-gaming/mGBA-wasm.git upstream || git clone --depth 1 https://github.com/wasm-gaming/mGBA-wasm.git upstream
+          python3 scripts/patch-mgba-speed.py
+          npm install --no-save --no-package-lock esbuild@0.25.12 @wasm-gaming/engine-specs@0.2.6
+          mkdir -p vendor
+          ./node_modules/.bin/esbuild upstream/src/mgba.sdk.ts --bundle --format=esm --platform=browser --target=es2022 --outfile=vendor/mgba-sdk.js
+          curl -fLsS https://cdn.jsdelivr.net/npm/@wasm-gaming/mgba-wasm@0.1.1/dist/mgba/mgba.js -o vendor/mgba.js
+          curl -fLsS https://cdn.jsdelivr.net/npm/@wasm-gaming/mgba-wasm@0.1.1/dist/mgba/mgba.wasm -o vendor/mgba.wasm
+          test -s vendor/mgba-sdk.js && test -s vendor/mgba.wasm && test -s vendor/mgba.js
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
