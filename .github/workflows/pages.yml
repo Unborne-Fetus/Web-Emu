@@ -22,6 +22,8 @@ jobs:
         with:
           node-version: '22'
       - name: Build Web Emu mGBA SDK with speed control
+        id: corebuild
+        continue-on-error: true
         run: |
           set -euo pipefail
           git clone --depth 1 --branch v0.1.1 https://github.com/wasm-gaming/mGBA-wasm.git upstream || git clone --depth 1 https://github.com/wasm-gaming/mGBA-wasm.git upstream
@@ -32,6 +34,11 @@ jobs:
           curl -fLsS https://cdn.jsdelivr.net/npm/@wasm-gaming/mgba-wasm@0.1.1/dist/mgba/mgba.js -o vendor/mgba.js
           curl -fLsS https://cdn.jsdelivr.net/npm/@wasm-gaming/mgba-wasm@0.1.1/dist/mgba/mgba.wasm -o vendor/mgba.wasm
           test -s vendor/mgba-sdk.js && test -s vendor/mgba.wasm && test -s vendor/mgba.js
+      - name: Remove incomplete core on build failure
+        if: steps.corebuild.outcome == 'failure'
+        run: |
+          rm -rf vendor
+          echo '::warning::Custom core failed to build; deploying the updated interface with CDN fallback. Check the preceding build logs.'
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
