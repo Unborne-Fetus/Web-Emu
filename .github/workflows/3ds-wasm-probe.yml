@@ -18,6 +18,31 @@ jobs:
         uses: mymindstorm/setup-emsdk@v14
         with:
           version: '4.0.17'
+      - name: Prepare bundled robin-map fallback
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          root = Path('azahar-src')
+          cmake = root / 'CMakeLists.txt'
+          text = cmake.read_text()
+          anchor = 'find_package(tsl-robin-map QUIET)'
+          headers = list((root / 'externals').rglob('robin_map.h'))
+          print('Bundled robin_map.h candidates:', [str(h) for h in headers])
+          if anchor not in text:
+              raise SystemExit('Azahar CMake robin-map declaration changed')
+          if not headers:
+              raise SystemExit('No bundled robin-map headers found; investigate upstream dependency')
+          include_dir = headers[0].parent.parent.resolve().as_posix()
+          fallback = """
+          if(NOT TARGET tsl::robin_map)
+              add_library(tsl::robin_map INTERFACE IMPORTED)
+              set_target_properties(tsl::robin_map PROPERTIES
+                  INTERFACE_INCLUDE_DIRECTORIES "INCLUDE_DIRECTORY")
+          endif()
+          """.replace('INCLUDE_DIRECTORY', include_dir)
+          cmake.write_text(text.replace(anchor, anchor + '\\n' + fallback, 1))
+          PY
       - name: Probe CMake WebAssembly configuration
         shell: bash
         run: |
