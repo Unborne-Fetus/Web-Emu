@@ -129,7 +129,7 @@ $('reset').onclick=()=>{if(engine&&confirm('Reset the game? Unsaved progress may
 $('saveState').onclick=async()=>{try{snapshot=new Uint8Array(await engine.saveState());say('Save state held in memory; export for backup')}catch(e){say(e.message)}};
 $('loadState').onclick=async()=>{try{if(!snapshot)throw Error('No save state loaded');await engine.loadState(snapshot);say('State loaded')}catch(e){say(e.message)}};
 $('exportState').onclick=async()=>{try{download(await engine.saveState(),filename+'.state');say('State exported')}catch(e){say(e.message)}};
-$('importState').onclick=()=>$('stateFile').click();$('stateFile').onchange=async e=>{try{const f=e.target.files[0];if(f&&engine){snapshot=new Uint8Array(await f.arrayBuffer());await engine.loadState(snapshot);say('State imported')}}catch(err){say(err.message)}e.target.value=''};
+$('importState').onclick=()=>$('stateFile').click();$('stateFile').onchange=async e=>{try{const f=e.target.files[0];if(f&&engine){snapshot=new Uint8Array(await f.arrayBuffer());await engine.loadState(snapshot);if($('stateFile').dataset.slotImport==='yes')await slotSave();say('State imported')}}catch(err){say(err.message)}delete $('stateFile').dataset.slotImport;e.target.value=''};
 $('deleteGameCache').onclick=async()=>{
  if(!engine||typeof engine.deleteGameCache!=='function')return;
  if(!confirm('Permanently delete cached save data and settings for '+filename+'? This cannot be undone. Export a .sav backup first if you need it.'))return;
@@ -157,7 +157,7 @@ function showKeys(){const root=$('keyBindings');root.replaceChildren();for(const
 $('resetKeys').onclick=()=>{bindings={...defaults};try{localStorage.removeItem('web-emu-keys')}catch(e){}applyKeys();showKeys()};showKeys();
 
 for(const el of document.querySelectorAll('[data-key]')){const key=el.dataset.key;const send=type=>{const map={'ArrowUp':'p1.up','ArrowDown':'p1.down','ArrowLeft':'p1.left','ArrowRight':'p1.right','x':'p1.a','z':'p1.b','a':'p1.l','s':'p1.r','Enter':'p1.start','ShiftRight':'p1.select'};const code=bindings[map[key]]||key;window.dispatchEvent(new KeyboardEvent(type,{key:code,code,bubbles:true}))};el.onpointerdown=e=>{e.preventDefault();el.setPointerCapture(e.pointerId);send('keydown')};el.onpointerup=el.onpointercancel=()=>send('keyup')}
-const offlineDB=()=>new Promise((resolve,reject)=>{try{const r=indexedDB.open('web-emu-offline-v1',1);r.onupgradeneeded=()=>{r.result.createObjectStore('roms',{keyPath:'id'});r.result.createObjectStore('backups',{keyPath:'id'})};r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)}catch(e){reject(e)}});
+const offlineDB=()=>new Promise((resolve,reject)=>{try{const r=indexedDB.open('web-emu-offline-v1',2);r.onupgradeneeded=()=>{r.result.createObjectStore('roms',{keyPath:'id'});r.result.createObjectStore('backups',{keyPath:'id'});r.result.createObjectStore('states',{keyPath:'id'})};r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)}catch(e){reject(e)}});
 async function storeOp(bucket,mode,fn){const db=await offlineDB();return new Promise((resolve,reject)=>{const t=db.transaction(bucket,mode),r=fn(t.objectStore(bucket));t.oncomplete=()=>{db.close();resolve(r?.result)};t.onerror=()=>{db.close();reject(t.error)}})}
 async function storeAll(bucket){return storeOp(bucket,'readonly',s=>s.getAll())}
 let keepRoms=false,activeGameId='',playStart=0,lastBackup=0;
@@ -168,5 +168,16 @@ async function refreshLibrary(){const root=$('libraryList');root.replaceChildren
 $('clearRoms').onclick=async()=>{if(!confirm('Remove all locally stored ROMs?'))return;try{await storeOp('roms','readwrite',s=>s.clear());refreshLibrary()}catch(e){say(e.message)}};
 async function rememberGame(file,bytes){if(!keepRoms)return;try{await storeOp('roms','readwrite',s=>s.put({id:ns(bytes),name:file.name,data:new Blob([bytes])}));refreshLibrary()}catch(e){say('ROM storage failed: '+e.message)}}
 void refreshLibrary();
+
+async function slotSave(){if(!engine||!activeGameId)return say('Load a game first');try{const slot=Number($('slotSelect').value),data=new Blob([await engine.saveState()]);await storeOp('states','readwrite',os=>os.put({id:activeGameId+':'+slot,rom:activeGameId,slot,data,when:Date.now()}));$('slotInfo').textContent='Saved slot '+(slot+1);say('State saved to slot '+(slot+1))}catch(e){say('Save slot failed: '+e.message)}}
+async function slotRecord(){if(!activeGameId)throw Error('Load a game first');return storeOp('states','readonly',os=>os.get(activeGameId+':'+$('slotSelect').value))}
+async function slotLoad(){try{const row=await slotRecord();if(!row)throw Error('Slot empty');await engine.loadState(new Uint8Array(await row.data.arrayBuffer()));say('Loaded slot '+(row.slot+1))}catch(e){say('Load slot failed: '+e.message)}}
+$('slotSave').onclick=slotSave;$('slotLoad').onclick=slotLoad;
+$('slotExport').onclick=async()=>{try{const row=await slotRecord();if(!row)throw Error('Slot empty');download(row.data,filename+'-slot-'+(row.slot+1)+'.state')}catch(e){say(e.message)}};
+$('slotImport').onclick=()=>{$('stateFile').dataset.slotImport='yes';$('stateFile').click()};
+$('slotSelect').onchange=async()=>{try{const row=await slotRecord();$('slotInfo').textContent=row?'Saved '+new Date(row.when).toLocaleString():'Empty slot'}catch(e){$('slotInfo').textContent='Unavailable'}};
+async function refreshBackups(){const root=$('backupList');root.replaceChildren();if(!activeGameId){root.textContent='Load a game first';return}try{const rows=(await storeAll('backups')).filter(b=>b.rom===activeGameId).sort((a,b)=>b.when-a.when);if(!rows.length){root.textContent='No backups yet';return}for(const b of rows.slice(0,20)){const row=document.createElement('div');row.className='control-row';const date=document.createElement('span');date.textContent=new Date(b.when).toLocaleString();const exp=document.createElement('button');exp.textContent='Export';exp.onclick=()=>download(b.data,filename+'-'+b.when+'.sav');const restore=document.createElement('button');restore.textContent='Restore';restore.onclick=async()=>{if(!confirm('Overwrite current battery save with this backup?'))return;try{await engine.importSave(new Uint8Array(await b.data.arrayBuffer()));say('Backup restored; restart game if necessary')}catch(e){say(e.message)}};row.append(date,exp,restore);root.append(row)}}catch(e){root.textContent='Save backups unavailable'}}
+async function backupNow(){if(!engine?.exportSave||!activeGameId)throw Error('Battery save backup unsupported');const data=engine.exportSave();if(!data?.length)throw Error('No battery save data');const now=Date.now();await storeOp('backups','readwrite',os=>os.put({id:activeGameId+':'+now,rom:activeGameId,when:now,data:new Blob([data])}));lastBackup=now;await refreshBackups()}
+$('backupNow').onclick=async()=>{try{await backupNow();say('Backup stored on this device')}catch(e){say('Backup failed: '+e.message)}};
 
 </script></html>
