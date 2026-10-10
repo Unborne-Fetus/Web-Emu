@@ -40,7 +40,7 @@ for rel in required:
 
 if (root / "runtime/node.exe").open("rb").read(2) != b"MZ":
     raise SystemExit("Bundled Node runtime is not a Windows executable")
-if (root / "vendor/mgba.wasm").open("rb").read(4) != b"\\x00asm":
+if (root / "vendor/mgba.wasm").open("rb").read(4) != b"\x00asm":
     raise SystemExit("Bundled mGBA runtime is not WebAssembly")
 if (root / "vendor/emulatorjs/data/cores/azahar-thread-wasm.data").stat().st_size < 1_000_000:
     raise SystemExit("Missing/truncated Azahar WebAssembly archive")
@@ -77,7 +77,7 @@ main = (root / "index.html").read_text(encoding="utf-8")
 player = (root / "cores/retro-player.html").read_text(encoding="utf-8")
 azahar_player = (root / "cores/3ds-player.html").read_text(encoding="utf-8")
 adapter = (root / "cores/retro.js").read_text(encoding="utf-8")
-if "runtime\\\\node.exe" not in launcher:
+if "runtime\\node.exe" not in launcher:
     raise SystemExit("Offline starter missing bundled node.exe reference")
 if "Cross-Origin-Opener-Policy" not in server or "Cross-Origin-Embedder-Policy" not in server:
     raise SystemExit("Offline server must set cross-origin isolation headers")
@@ -102,9 +102,9 @@ for system in catalog:
         raise SystemExit(f"Console {system} is missing from the offline selector")
 
 sources = {
-    "index": re.search(r'<script type="module">([\\s\\S]*?)</script>', main),
-    "retro player": re.search(r'<script>([\\s\\S]*?)</script>', player),
-    "3DS player": re.search(r'<script>([\\s\\S]*?)</script>', azahar_player),
+    "index": re.search(r'<script type="module">([\s\S]*?)</script>', main),
+    "retro player": re.search(r'<script>([\s\S]*?)</script>', player),
+    "3DS player": re.search(r'<script>([\s\S]*?)</script>', azahar_player),
 }
 for label, match in sources.items():
     if not match:
