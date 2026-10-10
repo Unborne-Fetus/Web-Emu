@@ -52,7 +52,7 @@ window.addEventListener("message", event => {
     return;
   }
   if (!crossOriginIsolated || typeof SharedArrayBuffer === "undefined") {
-    tell("error", "SharedArrayBuffer is not available. Reload the HTTPS site to enable cross-origin isolation.");
+    tell("error", "SharedArrayBuffer is not available. Launch the bundled Start-Web-Emu.cmd or reload the HTTPS site to enable cross-origin isolation.");
     return;
   }
   if (!document.createElement("canvas").getContext("webgl2")) {
@@ -85,7 +85,7 @@ window.addEventListener("message", event => {
   window.EJS_onExit = function () { tell("status", "3DS game exited. Choose another game or stop the emulator."); };
   const loader = document.createElement("script");
   loader.src = window.EJS_pathtodata + "loader.js";
-  loader.onerror = () => tell("error", "Unable to load the bundled EmulatorJS/Azahar runtime. Check the Pages deployment.");
+  loader.onerror = () => tell("error", "Unable to load the bundled EmulatorJS/Azahar runtime. Extract the complete offline ZIP or check the Pages deployment.");
   document.head.appendChild(loader);
 });
 </script>
