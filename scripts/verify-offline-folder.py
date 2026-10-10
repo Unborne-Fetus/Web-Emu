@@ -99,10 +99,17 @@ if 'cores/retro-systems.json' not in adapter:
     # The adapter loads the manifest relative to its module.
     if '"./retro-systems.json"' not in adapter:
         raise SystemExit("Shared console catalog not loaded by adapter")
-if 'id="classicSystem"' not in main or 'id="tabClassic"' not in main:
+if 'class="family-tab"' not in main or 'id="classicSystem"' not in main:
     raise SystemExit("Offline UI missing console selection")
+if '<select id="classicSystem"' in main:
+    raise SystemExit("Console dropdown must not return: use console tabs")
+if 'function selectClassicSystem(' not in main or 'function familyForConsole(' not in main:
+    raise SystemExit("Console tabs need selection and automatic family routing")
+for family in ("nintendo", "sega", "atari", "playstation", "handhelds", "nec", "classics", "computers"):
+    if f'data-family="{family}"' not in main or f'data-family-panel="{family}"' not in main:
+        raise SystemExit(f"Missing separate family tab and system panel: {family}")
 for system in catalog:
-    if f'value="{system}"' not in main:
+    if f'data-console="{system}"' not in main:
         raise SystemExit(f"Console {system} is missing from the offline selector")
 
 sources = {
