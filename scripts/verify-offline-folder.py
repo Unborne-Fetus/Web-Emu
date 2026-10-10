@@ -43,6 +43,9 @@ if (root / "runtime/node.exe").open("rb").read(2) != b"MZ":
     raise SystemExit("Bundled Node runtime is not a Windows executable")
 if (root / "vendor/mgba.wasm").open("rb").read(4) != b"\x00asm":
     raise SystemExit("Bundled mGBA runtime is not WebAssembly")
+psp_assets = root / "vendor/emulatorjs/data/cores/ppsspp-assets.zip"
+if psp_assets.stat().st_size < 5_000_000 or psp_assets.open("rb").read(4)[:2] != b"PK":
+    raise SystemExit("Missing / invalid PPSSPP assets ZIP: PSP cannot initialize offline")
 if (root / "vendor/emulatorjs/data/cores/azahar-thread-wasm.data").stat().st_size < 1_000_000:
     raise SystemExit("Missing/truncated Azahar WebAssembly archive")
 
