@@ -61,10 +61,17 @@ if "crossOriginIsolated" not in (root / "cores/3ds.js").read_text(encoding="utf-
     raise SystemExit("3DS adapter missing cross-origin isolation precheck")
 if "coi-serviceworker.js" not in main or not sw:
     raise SystemExit("GitHub Pages isolation service worker missing")
-if 'id="tabClassic"' not in main or 'id="classicSystem"' not in main:
+if 'class="family-tab"' not in main or 'id="classicSystem"' not in main:
     raise SystemExit("Missing retro console browser UI")
+if '<select id="classicSystem"' in main:
+    raise SystemExit("Console dropdown must not return: use console tabs")
+if 'function selectClassicSystem(' not in main or 'function familyForConsole(' not in main:
+    raise SystemExit("Console tabs need selection and automatic family routing")
+for family in ("nintendo", "sega", "atari", "playstation", "handhelds", "nec", "classics", "computers"):
+    if f'data-family="{family}"' not in main or f'data-family-panel="{family}"' not in main:
+        raise SystemExit(f"Missing separate family tab and system panel: {family}")
 for system in manifest:
-    if f'value="{system}"' not in main:
+    if f'data-console="{system}"' not in main:
         raise SystemExit(f"Console {system} absent from selector")
 
 sources = {
