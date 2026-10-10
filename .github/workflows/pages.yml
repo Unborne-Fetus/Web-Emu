@@ -60,32 +60,56 @@ jobs:
         run: |
           rm -rf vendor
           echo '::warning::Custom core failed to build; deploying the updated interface with CDN fallback. Check the preceding build logs.'
-      - name: Bundle threaded Azahar core for Nintendo 2DS / 3DS
+      - name: Bundle Azahar 2DS / 3DS for online and offline play
         run: |
           set -euo pipefail
-          # Azahar is available only in the EmulatorJS nightly channel as of October 2026.
-          # Bundle the runtime at deploy-time to keep all WebAssembly, JS and CSS
-          # same-origin with GitHub Pages' cross-origin isolation service worker.
-          base=https://cdn.emulatorjs.org/nightly/data
-          mkdir -p vendor/emulatorjs/data/cores vendor/emulatorjs/data/compression
-          for asset in loader.js emulator.min.js emulator.min.css version.json; do
-            curl --fail --location --silent --show-error --retry 3 "$base/$asset" -o "vendor/emulatorjs/data/$asset"
-            test -s "vendor/emulatorjs/data/$asset"
-          done
-          # EmulatorJS may need its worker utilities for compressed homebrew archives.
-          for asset in extractzip.js extract7z.js libunrar.js libunrar.wasm; do
-            curl --fail --location --silent --show-error --retry 3 "$base/compression/$asset" -o "vendor/emulatorjs/data/compression/$asset"
-            test -s "vendor/emulatorjs/data/compression/$asset"
-          done
-          curl --fail --location --silent --show-error --retry 3 "$base/cores/azahar-thread-wasm.data" -o vendor/emulatorjs/data/cores/azahar-thread-wasm.data
-          test "$(stat -c '%s' vendor/emulatorjs/data/cores/azahar-thread-wasm.data)" -gt 1000000
-          node --check vendor/emulatorjs/data/loader.js
+          python3 scripts/fetch-emulatorjs-azahar.py
           node --check cores/3ds.js
-          curl --fail --location --silent --show-error --retry 3 https://raw.githubusercontent.com/EmulatorJS/EmulatorJS/main/LICENSE -o vendor/emulatorjs/LICENSE-GPL-3.0.txt
-          test -s vendor/emulatorjs/LICENSE-GPL-3.0.txt
-          echo 'Azahar 3DS WebAssembly core staged for GitHub Pages.'
-      - name: Verify Azahar browser files and JavaScript syntax
+          node --check scripts/offline-server.cjs
+      - name: Verify Azahar browser assets
         run: python3 scripts/verify-3ds-assets.py
+      - name: Build complete offline Windows package
+        id: offlinecomplete
+        if: steps.corebuild.outcome == 'success'
+        run: |
+          set -euo pipefail
+          python3 scripts/build-offline-folder.py
+          package=dist-offline-complete/Web-Emu-Offline
+          mkdir -p "$package/runtime"
+          nodeversion=v22.16.0
+          curl --fail --location --silent --show-error --retry 3 \
+            "https://nodejs.org/dist/$nodeversion/node-$nodeversion-win-x64.zip" \
+            -o /tmp/web-emu-node-windows.zip
+          unzip -p /tmp/web-emu-node-windows.zip "node-$nodeversion-win-x64/node.exe" > "$package/runtime/node.exe"
+          unzip -p /tmp/web-emu-node-windows.zip "node-$nodeversion-win-x64/LICENSE" > "$package/runtime/NODE-LICENSE.txt"
+          test "$(stat -c '%s' "$package/runtime/node.exe")" -gt 1000000
+          test -s "$package/runtime/NODE-LICENSE.txt"
+          python3 scripts/verify-offline-folder.py "$package"
+          # Launch package server and assert shared-memory isolation headers.
+          WEB_EMU_NO_BROWSER=1 node "$package/scripts/offline-server.cjs" >/tmp/web-emu-offline-server.log 2>&1 &
+          offline_pid=$!
+          trap 'kill "$offline_pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do
+            if curl -fsSI http://127.0.0.1:8765/ >/tmp/web-emu-offline-headers; then break; fi
+            sleep 1
+          done
+          grep -qi 'cross-origin-opener-policy: same-origin' /tmp/web-emu-offline-headers
+          grep -qi 'cross-origin-embedder-policy: require-corp' /tmp/web-emu-offline-headers
+          curl -fsSI http://127.0.0.1:8765/cores/3ds-player.html
+          curl -fsSI http://127.0.0.1:8765/vendor/emulatorjs/data/cores/azahar-thread-wasm.data
+          curl -fsSI http://127.0.0.1:8765/vendor/mgba.wasm
+          echo 'Offline package and localhost cross-origin isolation smoke tests passed.'
+      - name: Upload complete offline emulator for Windows
+        if: steps.offlinecomplete.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Web-Emu-Offline-All-Systems
+          path: dist-offline-complete/Web-Emu-Offline/
+          if-no-files-found: error
+          compression-level: 6
+      - name: Report offline Windows package build failure
+        if: steps.offlinecomplete.outcome == 'failure'
+        run: echo '::warning::Offline package build failed. See the Build complete offline Windows package step.'
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
