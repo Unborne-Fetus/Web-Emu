@@ -60,14 +60,14 @@ jobs:
         run: |
           rm -rf vendor
           echo '::warning::Custom core failed to build; deploying the updated interface with CDN fallback. Check the preceding build logs.'
-      - name: Bundle Azahar and nine classic console emulators
+      - name: Bundle Azahar and 27 classic / advanced console variants
         run: |
           set -euo pipefail
           python3 scripts/fetch-emulatorjs-azahar.py
           node --check cores/3ds.js
           node --check cores/retro.js
           node --check scripts/offline-server.cjs
-      - name: Verify Azahar browser assets
+      - name: Verify all console cores and browser entrypoints
         run: python3 scripts/verify-3ds-assets.py
       - name: Build complete offline Windows package
         id: offlinecomplete
@@ -119,6 +119,8 @@ jobs:
           cp -r cores vendor licenses dist-pages/
           touch dist-pages/.nojekyll
           test -s dist-pages/cores/retro-player.html
+          test -s dist-pages/cores/retro-systems.json
+          test -s dist-pages/vendor/emulatorjs/data/cores/ppsspp-assets.zip
           test -s dist-pages/vendor/emulatorjs/data/cores/desmume-wasm.data
           test -s dist-pages/vendor/emulatorjs/data/cores/azahar-thread-wasm.data
       - uses: actions/configure-pages@v5
