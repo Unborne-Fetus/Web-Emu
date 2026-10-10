@@ -1,74 +1,71 @@
 #!/usr/bin/env python3
-"""Assemble the *offline* multi-console folder from already downloaded cores.
+"""Stage a complete Windows offline folder with every configured console core.
 
-No remote assets are fetched by this script. It fails rather than ship a
-partially online build. Windows node.exe is added by the Actions workflow.
+The build fetches cores before this step. Missing systems are fatal. No network
+requests are made during offline packaging or gameplay.
 """
 from pathlib import Path
-from shutil import copy2, copytree
+from shutil import copy2, copytree, rmtree
 import json
 
 root = Path(__file__).resolve().parent.parent
-package = root / "dist-offline-complete" / "Web-Emu-Offline"
-
-required = [
-    "index.html",
-    "coi-serviceworker.js",
-    "Start-Web-Emu.cmd",
-    "cores/3ds.js",
-    "cores/3ds-player.html",
-    "scripts/offline-server.cjs",
-    "cores/retro.js",
-    "cores/retro-player.html",
-    "vendor/mgba-sdk.js",
-    "vendor/mgba.js",
-    "vendor/mgba.wasm",
+output = root / "dist-offline-complete" / "Web-Emu-Offline"
+app_files = (
+    "index.html", "coi-serviceworker.js", "Start-Web-Emu.cmd",
+    "cores/3ds.js", "cores/3ds-player.html",
+    "cores/retro.js", "cores/retro-player.html",
+    "cores/retro-systems.json", "scripts/offline-server.cjs",
+)
+static_files = (
+    "vendor/mgba-sdk.js", "vendor/mgba.js", "vendor/mgba.wasm",
     "vendor/emulatorjs/data/loader.js",
     "vendor/emulatorjs/data/emulator.min.js",
     "vendor/emulatorjs/data/emulator.min.css",
     "vendor/emulatorjs/data/cores/azahar-thread-wasm.data",
     "vendor/emulatorjs/data/cores/reports/azahar.json",
-    # The player selects legacy/threads variants dynamically. All four
-    # must be included to guarantee an actually offline core load.
-    *(
-        f"vendor/emulatorjs/data/cores/{core}{variant}.data"
-        for core in (
-            "desmume", "fceumm", "snes9x", "mupen64plus_next",
-            "genesis_plus_gx", "stella2014", "beetle_vb",
-        )
-        for variant in ("-wasm", "-legacy-wasm", "-thread-wasm", "-thread-legacy-wasm")
-    ),
-    *(
-        f"vendor/emulatorjs/data/cores/reports/{core}.json"
-        for core in (
-            "desmume", "fceumm", "snes9x", "mupen64plus_next",
-            "genesis_plus_gx", "stella2014", "beetle_vb",
-        )
-    ),
-
+    "vendor/emulatorjs/data/cores/webemu-variants.json",
     "vendor/emulatorjs/data/compression/extractzip.js",
     "vendor/emulatorjs/data/compression/extract7z.js",
     "vendor/emulatorjs/data/compression/libunrar.js",
     "vendor/emulatorjs/data/compression/libunrar.wasm",
     "vendor/emulatorjs/LICENSE-GPL-3.0.txt",
     "licenses/coi-serviceworker-LICENSE",
-]
-for rel in required:
-    path = root / rel
-    if not path.is_file() or not path.stat().st_size:
-        raise SystemExit(f"Cannot produce complete offline package. Missing: {rel}")
+)
+for rel in (*app_files, *static_files, "README.md"):
+    file = root / rel
+    if not file.is_file() or file.stat().st_size < 10:
+        raise SystemExit(f"Cannot package offline Web Emu: missing {rel}")
 
-if (root / "vendor" / "emulatorjs" / "data" / "cores" / "azahar-thread-wasm.data").stat().st_size < 1_000_000:
-    raise SystemExit("Azahar core appears incomplete")
+catalog = json.loads((root / "cores/retro-systems.json").read_text(encoding="utf-8"))["systems"]
+variants = json.loads((root / "vendor/emulatorjs/data/cores/webemu-variants.json").read_text(encoding="utf-8"))
+if len(catalog) != 27:
+    raise SystemExit(f"Expected 27 retro systems, got {len(catalog)}")
+cores = {info["core"]: bool(info.get("threads")) for info in catalog.values()}
+for name, threaded in cores.items():
+    if name not in variants or bool(variants[name]["threads"]) != threaded:
+        raise SystemExit(f"Missing/incorrect {name} WebAssembly core variant manifest")
+    report = root / f"vendor/emulatorjs/data/cores/reports/{name}.json"
+    if not report.is_file():
+        raise SystemExit(f"Missing offline core metadata for {name}")
+    prefix = f"vendor/emulatorjs/data/cores/{name}{'-thread' if threaded else ''}"
+    if not any((root / (prefix + suffix)).is_file()
+               for suffix in ("-wasm.data", "-legacy-wasm.data")):
+        raise SystemExit(f"Offline package cannot run {name}: no matching WASM core")
 
-package.mkdir(parents=True, exist_ok=True)
-for rel in required[:8]:
-    dst = package / rel
-    dst.parent.mkdir(parents=True, exist_ok=True)
-    copy2(root / rel, dst)
-copytree(root / "vendor", package / "vendor", dirs_exist_ok=True)
-copytree(root / "licenses", package / "licenses", dirs_exist_ok=True)
-copy2(root / "README.md", package / "README.md")
-print(f"Offline package staged: {package}")
-print(f"Local files: {sum(1 for p in package.rglob('*') if p.is_file())}")
-print("Windows Node runtime (node.exe) must still be bundled before upload.")
+if (root / "vendor/emulatorjs/data/cores/azahar-thread-wasm.data").stat().st_size < 1_000_000:
+    raise SystemExit("Azahar core appears truncated")
+if output.exists():
+    rmtree(output)
+output.mkdir(parents=True)
+for rel in app_files:
+    dest = output / rel
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    copy2(root / rel, dest)
+copytree(root / "vendor", output / "vendor", dirs_exist_ok=True)
+copytree(root / "licenses", output / "licenses", dirs_exist_ok=True)
+copy2(root / "README.md", output / "README.md")
+
+print(f"Offline package staged at {output}")
+print(f"Retro: {len(catalog)} systems using {len(cores)} unique libretro cores; Azahar + mGBA included")
+print(f"Files: {sum(1 for p in output.rglob('*') if p.is_file())}")
+print("GitHub Actions adds Windows node.exe before ZIP upload.")
