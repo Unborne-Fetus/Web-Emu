@@ -93,14 +93,24 @@ button,input,summary{touch-action:manipulation}button:focus-visible,input:focus-
 .three-ds-panel:fullscreen{overflow:auto;background:#080507;padding:12px}
 .three-ds-panel:fullscreen .three-ds-host{height:calc(100dvh - 150px);max-height:none}
 @media(max-width:650px){.three-ds-host{height:clamp(380px,67dvh,780px)}}
+
+/* Group tabs: each family is its own tab, every console gets a direct button. */
+.system-tabs{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px;margin-bottom:12px}
+.system-tabs button{flex:1 1 auto;min-width:100px;max-width:none;white-space:normal}
+.system-tabs .family-tab{min-width:105px}
+.console-group[hidden]{display:none}
+.console-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:14px 0}
+.console-chips button{flex:0 1 auto;border-radius:12px;padding:11px 15px;min-height:44px;font-weight:650}
+.console-chips button.selected,.console-chips button[aria-pressed="true"]{background:#9b2440;border-color:#e96282;box-shadow:inset 0 0 0 1px #e96282}
+@media(max-width:650px){.system-tabs button{flex:1 1 calc(33.33% - 8px);min-width:0}.console-chips button{flex:1 1 calc(50% - 8px)}}
+@media(max-width:380px){.system-tabs button{flex:1 1 calc(50% - 8px)}.console-chips button{flex:1 1 100%}}
+
 </style><main><header><span>▣ WEB EMU <small>/ MULTI-CONSOLE</small></span><small>BROWSER EDITION</small></header>
-<nav class="system-tabs" aria-label="Emulator systems"><button type="button" id="tabRetro" class="selected" aria-selected="true">GB / GBC / GBA</button><button type="button" id="tab3ds" aria-selected="false">2DS / 3DS</button><button type="button" id="tabClassic" aria-selected="false">More consoles</button></nav><section id="classicPanel" class="three-ds-panel" hidden>
-<h2>More consoles · 27 offline systems</h2>
-<p>Choose a supported console and open your own game file. All emulators run on this device with the complete offline Windows package. CD-based systems and classic computers may need BIOS or multi-file game sets.</p>
-<div class="actions" style="align-items:center;flex-wrap:wrap">
-<label for="classicSystem">Console</label>
-<select id="classicSystem" aria-label="Choose console"><optgroup label="Nintendo &amp; classic"><option value="nds">Nintendo DS</option><option value="nes">NES / Famicom</option><option value="snes">Super Nintendo</option><option value="n64">Nintendo 64</option><option value="vb">Virtual Boy</option></optgroup><optgroup label="PlayStation"><option value="psx">PlayStation 1</option><option value="psp">PlayStation Portable (PSP)</option></optgroup><optgroup label="Sega"><option value="segaMD">Sega Genesis / Mega Drive</option><option value="segaGG">Sega Game Gear</option><option value="segaMS">Sega Master System</option><option value="segaCD">Sega CD / Mega-CD</option><option value="sega32x">Sega 32X</option></optgroup><optgroup label="Atari &amp; other handhelds"><option value="atari2600">Atari 2600</option><option value="atari7800">Atari 7800</option><option value="lynx">Atari Lynx</option><option value="ngp">Neo Geo Pocket / Color</option><option value="ws">WonderSwan / Color</option><option value="pce">TurboGrafx-16 / PC Engine</option><option value="atari5200">Atari 5200</option></optgroup><optgroup label="Other home consoles"><option value="coleco">ColecoVision</option><option value="intv">Intellivision</option></optgroup><optgroup label="Advanced systems"><option value="arcade">Arcade (FBNeo)</option><option value="dos">MS-DOS (DOSBox Pure)</option><option value="c64">Commodore 64</option><option value="amiga">Commodore Amiga</option><option value="3do">Panasonic 3DO</option><option value="segaSaturn">Sega Saturn</option></optgroup></select>
-</div>
+<nav class="system-tabs" aria-label="Console families"><button type="button" id="tabRetro" class="selected" aria-selected="true">Game Boy</button><button type="button" id="tab3ds" aria-selected="false">2DS / 3DS</button><button type="button" class="family-tab" data-family="nintendo" aria-selected="false">Nintendo</button><button type="button" class="family-tab" data-family="sega" aria-selected="false">Sega</button><button type="button" class="family-tab" data-family="atari" aria-selected="false">Atari</button><button type="button" class="family-tab" data-family="playstation" aria-selected="false">PlayStation</button><button type="button" class="family-tab" data-family="handhelds" aria-selected="false">Handhelds</button><button type="button" class="family-tab" data-family="nec" aria-selected="false">NEC</button><button type="button" class="family-tab" data-family="classics" aria-selected="false">Other consoles</button><button type="button" class="family-tab" data-family="computers" aria-selected="false">Arcade & computers</button></nav><section id="classicPanel" class="three-ds-panel" hidden>
+<h2 id="classicFamilyTitle">Nintendo consoles</h2>
+<p>Select a console tab to load a game. Games run locally in the complete offline Web Emu package. Some systems may need your own BIOS or compatible disc files.</p>
+<div class="console-groups" aria-label="Consoles grouped by family"><div class="console-group" data-family-panel="nintendo" ><div class="console-chips" role="group" aria-label="Nintendo consoles"><button type="button" data-console="nds" aria-pressed="true" class="selected">Nintendo DS</button><button type="button" data-console="nes" aria-pressed="false" class="">NES / Famicom</button><button type="button" data-console="snes" aria-pressed="false" class="">Super Nintendo</button><button type="button" data-console="n64" aria-pressed="false" class="">Nintendo 64</button><button type="button" data-console="vb" aria-pressed="false" class="">Virtual Boy</button></div></div><div class="console-group" data-family-panel="sega" hidden><div class="console-chips" role="group" aria-label="Sega consoles"><button type="button" data-console="segaMD" aria-pressed="false" class="">Sega Genesis / Mega Drive</button><button type="button" data-console="segaMS" aria-pressed="false" class="">Sega Master System</button><button type="button" data-console="segaGG" aria-pressed="false" class="">Sega Game Gear</button><button type="button" data-console="segaCD" aria-pressed="false" class="">Sega CD / Mega-CD</button><button type="button" data-console="sega32x" aria-pressed="false" class="">Sega 32X</button><button type="button" data-console="segaSaturn" aria-pressed="false" class="">Sega Saturn</button></div></div><div class="console-group" data-family-panel="atari" hidden><div class="console-chips" role="group" aria-label="Atari consoles"><button type="button" data-console="atari2600" aria-pressed="false" class="">Atari 2600</button><button type="button" data-console="atari5200" aria-pressed="false" class="">Atari 5200</button><button type="button" data-console="atari7800" aria-pressed="false" class="">Atari 7800</button><button type="button" data-console="lynx" aria-pressed="false" class="">Atari Lynx</button></div></div><div class="console-group" data-family-panel="playstation" hidden><div class="console-chips" role="group" aria-label="PlayStation consoles"><button type="button" data-console="psx" aria-pressed="false" class="">PlayStation 1</button><button type="button" data-console="psp" aria-pressed="false" class="">PlayStation Portable (PSP)</button></div></div><div class="console-group" data-family-panel="handhelds" hidden><div class="console-chips" role="group" aria-label="Handhelds consoles"><button type="button" data-console="ngp" aria-pressed="false" class="">Neo Geo Pocket / Color</button><button type="button" data-console="ws" aria-pressed="false" class="">WonderSwan / Color</button></div></div><div class="console-group" data-family-panel="nec" hidden><div class="console-chips" role="group" aria-label="NEC consoles"><button type="button" data-console="pce" aria-pressed="false" class="">TurboGrafx-16 / PC Engine</button></div></div><div class="console-group" data-family-panel="classics" hidden><div class="console-chips" role="group" aria-label="Other consoles consoles"><button type="button" data-console="coleco" aria-pressed="false" class="">ColecoVision</button><button type="button" data-console="intv" aria-pressed="false" class="">Intellivision</button><button type="button" data-console="3do" aria-pressed="false" class="">Panasonic 3DO</button></div></div><div class="console-group" data-family-panel="computers" hidden><div class="console-chips" role="group" aria-label="Arcade &amp; computers consoles"><button type="button" data-console="arcade" aria-pressed="false" class="">Arcade (FBNeo)</button><button type="button" data-console="dos" aria-pressed="false" class="">MS-DOS (DOSBox Pure)</button><button type="button" data-console="c64" aria-pressed="false" class="">Commodore 64</button><button type="button" data-console="amiga" aria-pressed="false" class="">Commodore Amiga</button></div></div></div>
+<input type="hidden" id="classicSystem" value="nds">
 <p id="classicSystemInfo" class="muted">Select a console to see supported game formats.</p>
 <div id="classicHost" class="three-ds-host" hidden></div>
 <div class="actions">
@@ -151,13 +161,12 @@ async function openGame(file){
      const preferred=$('classicSystem').value;
      const selected=compatible.find(([id])=>id===preferred);
      const choice=selected|| (compatible.length===1?compatible[0]:null);
-     showSystemTab('classic');
      if(!choice){
-       $('classicStatus').textContent='Multiple consoles use .'+extension+'. Choose the correct console from the list above, then open the game again.';
+       showSystemTab(familyForConsole(preferred));
+       $('classicStatus').textContent='Multiple consoles use .'+extension+'. Select its console tab, then open the game again.';
        return;
      }
-     $('classicSystem').value=choice[0];
-     await refreshClassicSystemInfo();
+     selectClassicSystem(choice[0]);
      await launchClassicFile(file);
    }catch(error){say('Classic emulator unavailable: '+error.message)}
    return;
@@ -252,16 +261,55 @@ $('padProfile').onchange=e=>{profile=e.target.value;try{localStorage.setItem('we
 setInterval(()=>{if(activeGameId){let saved=0;try{saved=Number(localStorage.getItem('webemu-time:'+activeGameId)||0)}catch(e){}const seconds=saved+(playStart?(Date.now()-playStart)/1000:0);$('playtimeLabel').textContent='Playtime: '+Math.floor(seconds/3600)+'h '+Math.floor(seconds%3600/60)+'m'}const controller=Array.from(navigator.getGamepads?.()||[]).find(x=>x?.connected);$('controllerLabel').textContent=controller?'Controller connected: '+controller.id:'No external controller connected';$('perfLabel').textContent=engine?'Performance: '+(frameFps?frameFps.toFixed(1)+' emulated FPS':'sampling FPS')+' · '+(selectedSpeed===0?'Unbounded':selectedSpeed+'× target'):'Performance: waiting for game'},1000);
 window.addEventListener('keydown',e=>{if(!engine||e.repeat||e.ctrlKey||e.altKey||e.metaKey||/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName||''))return;const actions={F6:()=> $('slotSave').click(),F7:()=> $('slotLoad').click(),F8:rewindGame,F9:()=> $('shot').click(),KeyP:()=> $('pause').click()};if(actions[e.code]){e.preventDefault();actions[e.code]()}},true);
 
+const CONSOLE_FAMILIES=[{"id":"nintendo","label":"Nintendo","systems":["nds","nes","snes","n64","vb"]},{"id":"sega","label":"Sega","systems":["segaMD","segaMS","segaGG","segaCD","sega32x","segaSaturn"]},{"id":"atari","label":"Atari","systems":["atari2600","atari5200","atari7800","lynx"]},{"id":"playstation","label":"PlayStation","systems":["psx","psp"]},{"id":"handhelds","label":"Handhelds","systems":["ngp","ws"]},{"id":"nec","label":"NEC","systems":["pce"]},{"id":"classics","label":"Other consoles","systems":["coleco","intv","3do"]},{"id":"computers","label":"Arcade & computers","systems":["arcade","dos","c64","amiga"]}];
+function familyForConsole(system){
+ return CONSOLE_FAMILIES.find(g=>g.systems.includes(system))?.id || 'nintendo';
+}
 function showSystemTab(tab){
- const three=tab==='3ds', classic=tab==='classic', retro=!three&&!classic;
- for (const [id,selected] of [['tabRetro',retro],['tab3ds',three],['tabClassic',classic]]) {
-  $(id).classList.toggle('selected',selected);
-  $(id).setAttribute('aria-selected',String(selected));
+ const isRetro=tab==='retro',isThree=tab==='3ds',family=CONSOLE_FAMILIES.find(g=>g.id===tab);
+ $('tabRetro').classList.toggle('selected',isRetro);
+ $('tabRetro').setAttribute('aria-selected',String(isRetro));
+ $('tab3ds').classList.toggle('selected',isThree);
+ $('tab3ds').setAttribute('aria-selected',String(isThree));
+ for(const button of document.querySelectorAll('.family-tab')){
+  const chosen=button.dataset.family===tab;
+  button.classList.toggle('selected',chosen);
+  button.setAttribute('aria-selected',String(chosen));
  }
- $('threeDsPanel').hidden=!three;
- $('classicPanel').hidden=!classic;
- $('stage').hidden=!retro;
+ $('threeDsPanel').hidden=!isThree;
+ $('classicPanel').hidden=!family;
+ $('stage').hidden=!isRetro;
+ for(const section of document.querySelectorAll('[data-family-panel]')){
+  section.hidden=section.dataset.familyPanel!==tab;
+ }
+ if(family){
+  $('classicFamilyTitle').textContent=family.label+' consoles';
+  if(!family.systems.includes($('classicSystem').value))selectClassicSystem(family.systems[0],false);
+ }
  try{sessionStorage.setItem('webemu-system-tab',tab)}catch(e){}
+}
+function selectClassicSystem(id,showFamily=true){
+ const group=familyForConsole(id);
+ if(showFamily)showSystemTab(group);
+ $('classicSystem').value=id;
+ for(const button of document.querySelectorAll('[data-console]')){
+  const selected=button.dataset.console===id;
+  button.classList.toggle('selected',selected);
+  button.setAttribute('aria-pressed',String(selected));
+ }
+ classicBiosFile=null;
+ $('classicBiosFile').value='';
+ $('classicBiosLabel').textContent='No BIOS selected. Proprietary firmware is not supplied.';
+ void refreshClassicSystemInfo();
+}
+for(const tab of document.querySelectorAll('.family-tab')){
+ tab.onclick=()=>{
+  const group=CONSOLE_FAMILIES.find(g=>g.id===tab.dataset.family);
+  if(group)showSystemTab(group.id);
+ };
+}
+for(const button of document.querySelectorAll('[data-console]')){
+ button.onclick=()=>selectClassicSystem(button.dataset.console);
 }
 $('tabRetro').onclick=()=>showSystemTab('retro');
 $('tab3ds').onclick=()=>showSystemTab('3ds');
@@ -349,12 +397,6 @@ $('classicBiosFile').onchange=event=>{
   classicBiosFile=event.target.files?.[0]||null;
   $('classicBiosLabel').textContent=classicBiosFile?'Using your own firmware: '+classicBiosFile.name:'No BIOS selected.';
 };
-$('classicSystem').onchange=()=>{
-  classicBiosFile=null;
-  $('classicBiosFile').value='';
-  $('classicBiosLabel').textContent='No BIOS selected. Proprietary firmware is not supplied.';
-  void refreshClassicSystemInfo();
-};
 void refreshClassicSystemInfo();
 async function stopClassic() {
   if (classicLoading) return;
@@ -403,8 +445,11 @@ $('classicFile').onchange = async event => {
   event.target.value = '';
   await launchClassicFile(file);
 };
-$('tabClassic').onclick = () => showSystemTab('classic');
+
 
 void get3dsCore();
-try{if(['3ds','classic'].includes(sessionStorage.getItem('webemu-system-tab')))showSystemTab(sessionStorage.getItem('webemu-system-tab'))}catch(e){}
+try{
+ const saved=sessionStorage.getItem('webemu-system-tab');
+ if(saved==='3ds'||CONSOLE_FAMILIES.some(g=>g.id===saved))showSystemTab(saved);
+}catch(e){}
 </script></html>
