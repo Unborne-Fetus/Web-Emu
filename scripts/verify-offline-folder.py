@@ -14,6 +14,8 @@ required = [
     "scripts/offline-server.cjs",
     "cores/3ds.js",
     "cores/3ds-player.html",
+    "cores/retro.js",
+    "cores/retro-player.html",
     "coi-serviceworker.js",
     "vendor/mgba-sdk.js",
     "vendor/mgba.js",
@@ -32,6 +34,15 @@ required = [
     "runtime/node.exe",
     "runtime/NODE-LICENSE.txt",
 ]
+retro_cores = (
+    "desmume", "fceumm", "snes9x", "mupen64plus_next",
+    "genesis_plus_gx", "stella2014", "beetle_vb",
+)
+for core in retro_cores:
+    required.append(f"vendor/emulatorjs/data/cores/reports/{core}.json")
+    for variant in ("-wasm", "-legacy-wasm", "-thread-wasm", "-thread-legacy-wasm"):
+        required.append(f"vendor/emulatorjs/data/cores/{core}{variant}.data")
+
 for rel in required:
     p = root / rel
     if not p.is_file() or p.stat().st_size < 10:
@@ -54,9 +65,37 @@ if 'EJS_pathtodata = new URL("../vendor/emulatorjs/data/"' not in player:
     raise SystemExit("3DS player does not use bundled EmulatorJS files")
 if './vendor/mgba-sdk.js' not in index:
     raise SystemExit("GBA player does not use its bundled SDK")
-for rel in ("scripts/offline-server.cjs", "cores/3ds.js"):
+for rel in ("scripts/offline-server.cjs", "cores/3ds.js", "cores/retro.js"):
     p = root / rel
     proc = subprocess.run(["node", "--check", str(p)], capture_output=True, text=True)
     if proc.returncode:
         raise SystemExit(f"JavaScript parse failed: {rel}: {proc.stderr}")
-print(f"OK: {len(required)} essential offline files, Windows exe, WASM, localhost security headers, JS syntax")
+retro_player = (root / "cores/retro-player.html").read_text(encoding="utf-8")
+if 'EJS_core = data.system' not in retro_player:
+    raise SystemExit("Retro player does not dynamically select requested console")
+if 'window.EJS_pathtodata = new URL("../vendor/emulatorjs/data/"' not in retro_player:
+    raise SystemExit("Retro player does not load locally bundled cores")
+if '"desmume"' not in retro_player:
+    raise SystemExit("Nintendo DS default needs a bootable DeSmuME WASM core")
+if 'id="classicSystem"' not in index or 'id="tabClassic"' not in index:
+    raise SystemExit("Classic console selector is missing from the UI")
+for core in retro_cores:
+    for variant in ("-wasm", "-legacy-wasm", "-thread-wasm", "-thread-legacy-wasm"):
+        p = root / f"vendor/emulatorjs/data/cores/{core}{variant}.data"
+        if p.stat().st_size < 100_000:
+            raise SystemExit(f"Core data appears truncated: {p}")
+import re
+for label, source in (
+    ("main interface", re.search(r'<script type="module">([\\s\\S]*?)</script>', index)),
+    ("retro player", re.search(r'<script>([\\s\\S]*?)</script>', retro_player)),
+):
+    if not source:
+        raise SystemExit(f"Cannot find embedded script for {label}")
+    proc = subprocess.run(
+        ["node", "--input-type=module", "--check"],
+        input=source.group(1), capture_output=True, text=True
+    )
+    if proc.returncode:
+        raise SystemExit(f"JavaScript parse failed: {label}: {proc.stderr}")
+print(f"OK: {len(required)} essential offline files, seven bundled libretro cores, 9 classic systems, localhost headers, JS syntax")
+
