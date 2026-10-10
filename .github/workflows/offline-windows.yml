@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   offline-windows:
-    name: Offline Windows (Azahar + mGBA)
+    name: Offline Windows (14 console variants)
     runs-on: ubuntu-latest
     steps:
       - name: Check out Web Emu
@@ -38,10 +38,10 @@ jobs:
           test -s vendor/mgba.js
           test -s vendor/mgba.wasm
 
-      - name: Download actual Azahar 3DS WASM runtime
+      - name: Download Azahar and seven classic libretro cores
         run: python3 scripts/fetch-emulatorjs-azahar.py
 
-      - name: Verify 3DS runtime and launcher syntax
+      - name: Verify 3DS and nine classic console player scripts
         run: python3 scripts/verify-3ds-assets.py
 
       - name: Assemble offline package
@@ -56,7 +56,7 @@ jobs:
           unzip -p /tmp/node-win-x64.zip "node-$version-win-x64/LICENSE" > "$package/runtime/NODE-LICENSE.txt"
           python3 scripts/verify-offline-folder.py "$package"
 
-      - name: Test offline server and 3DS security headers
+      - name: Test offline server and every bundled console
         run: |
           set -euo pipefail
           WEB_EMU_NO_BROWSER=1 node dist-offline-complete/Web-Emu-Offline/scripts/offline-server.cjs >/tmp/web-emu-server.log 2>&1 &
@@ -71,6 +71,11 @@ jobs:
           curl -fsSI http://127.0.0.1:8765/cores/3ds-player.html
           curl -fsSI http://127.0.0.1:8765/vendor/emulatorjs/data/cores/azahar-thread-wasm.data
           curl -fsSI http://127.0.0.1:8765/vendor/mgba.wasm
+          curl -fsSI http://127.0.0.1:8765/cores/retro-player.html
+          for core in desmume fceumm snes9x mupen64plus_next genesis_plus_gx stella2014 beetle_vb; do
+            curl -fsSI "http://127.0.0.1:8765/vendor/emulatorjs/data/cores/${core}-wasm.data" >/dev/null
+            curl -fsSI "http://127.0.0.1:8765/vendor/emulatorjs/data/cores/${core}-legacy-wasm.data" >/dev/null
+          done
           echo 'Offline file access and shared-memory isolation headers OK'
 
       - name: Upload ready-to-extract Windows offline ZIP
