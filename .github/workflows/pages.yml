@@ -60,6 +60,34 @@ jobs:
         run: |
           rm -rf vendor
           echo '::warning::Custom core failed to build; deploying the updated interface with CDN fallback. Check the preceding build logs.'
+      - name: Bundle threaded Azahar core for Nintendo 2DS / 3DS
+        run: |
+          set -euo pipefail
+          # Azahar is available only in the EmulatorJS nightly channel as of October 2026.
+          # Bundle the runtime at deploy-time to keep all WebAssembly, JS and CSS
+          # same-origin with GitHub Pages' cross-origin isolation service worker.
+          base=https://cdn.emulatorjs.org/nightly/data
+          mkdir -p vendor/emulatorjs/data/cores
+          for asset in loader.js emulator.min.js emulator.min.css version.json; do
+            curl --fail --location --silent --show-error --retry 3 "$base/$asset" -o "vendor/emulatorjs/data/$asset"
+            test -s "vendor/emulatorjs/data/$asset"
+          done
+          curl --fail --location --silent --show-error --retry 3 "$base/cores/azahar-thread-wasm.data" -o vendor/emulatorjs/data/cores/azahar-thread-wasm.data
+          test "$(stat -c '%s' vendor/emulatorjs/data/cores/azahar-thread-wasm.data)" -gt 1000000
+          node --check vendor/emulatorjs/data/loader.js
+          node --check cores/3ds.js
+          curl --fail --location --silent --show-error --retry 3 https://raw.githubusercontent.com/EmulatorJS/EmulatorJS/main/LICENSE -o vendor/emulatorjs/LICENSE-GPL-3.0.txt
+          test -s vendor/emulatorjs/LICENSE-GPL-3.0.txt
+          echo 'Azahar 3DS WebAssembly core staged for GitHub Pages.'
+      - name: Verify Azahar launcher assets
+        run: |
+          test -s cores/3ds.js
+          test -s cores/3ds-player.html
+          test -s coi-serviceworker.js
+          test -s vendor/emulatorjs/data/cores/azahar-thread-wasm.data
+          grep -q 'EJS_threads = true' cores/3ds-player.html
+          grep -q 'crossOriginIsolated' cores/3ds.js
+          grep -q 'threeDsHost' index.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
