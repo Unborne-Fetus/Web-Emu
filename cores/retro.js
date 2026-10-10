@@ -3,7 +3,7 @@
 const runtimeRoot = new URL("../vendor/emulatorjs/data/", import.meta.url);
 const playerUrl = new URL("./retro-player.html", import.meta.url);
 export const SYSTEMS = Object.freeze({
-  nds: { label: "Nintendo DS", core: "melonds", extensions: ["nds"] },
+  nds: { label: "Nintendo DS", core: "desmume", extensions: ["nds"] },
   nes: { label: "NES", core: "fceumm", extensions: ["nes"] },
   snes: { label: "SNES", core: "snes9x", extensions: ["sfc", "smc"] },
   n64: { label: "Nintendo 64", core: "mupen64plus_next", extensions: ["n64", "z64", "v64"] },
