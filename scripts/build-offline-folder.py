@@ -18,6 +18,8 @@ required = [
     "cores/3ds.js",
     "cores/3ds-player.html",
     "scripts/offline-server.cjs",
+    "cores/retro.js",
+    "cores/retro-player.html",
     "vendor/mgba-sdk.js",
     "vendor/mgba.js",
     "vendor/mgba.wasm",
@@ -26,6 +28,24 @@ required = [
     "vendor/emulatorjs/data/emulator.min.css",
     "vendor/emulatorjs/data/cores/azahar-thread-wasm.data",
     "vendor/emulatorjs/data/cores/reports/azahar.json",
+    # The player selects legacy/threads variants dynamically. All four
+    # must be included to guarantee an actually offline core load.
+    *(
+        f"vendor/emulatorjs/data/cores/{core}{variant}.data"
+        for core in (
+            "desmume", "fceumm", "snes9x", "mupen64plus_next",
+            "genesis_plus_gx", "stella2014", "beetle_vb",
+        )
+        for variant in ("-wasm", "-legacy-wasm", "-thread-wasm", "-thread-legacy-wasm")
+    ),
+    *(
+        f"vendor/emulatorjs/data/cores/reports/{core}.json"
+        for core in (
+            "desmume", "fceumm", "snes9x", "mupen64plus_next",
+            "genesis_plus_gx", "stella2014", "beetle_vb",
+        )
+    ),
+
     "vendor/emulatorjs/data/compression/extractzip.js",
     "vendor/emulatorjs/data/compression/extract7z.js",
     "vendor/emulatorjs/data/compression/libunrar.js",
@@ -42,7 +62,7 @@ if (root / "vendor" / "emulatorjs" / "data" / "cores" / "azahar-thread-wasm.data
     raise SystemExit("Azahar core appears incomplete")
 
 package.mkdir(parents=True, exist_ok=True)
-for rel in required[:6]:
+for rel in required[:8]:
     dst = package / rel
     dst.parent.mkdir(parents=True, exist_ok=True)
     copy2(root / rel, dst)
