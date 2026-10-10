@@ -5,10 +5,10 @@ const playerUrl = new URL("./3ds-player.html", import.meta.url);
 
 export async function check3dsAvailability() {
   if (location.protocol !== "https:" && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
-    throw new Error("3DS emulation requires the hosted HTTPS site (or localhost); a double-clicked index.html cannot run the threaded Azahar core.");
+    throw new Error("3DS needs the offline Start-Web-Emu.cmd launcher on Windows, or the HTTPS site. Opening index.html directly cannot run Azahar.");
   }
   if (!self.crossOriginIsolated || typeof SharedArrayBuffer === "undefined") {
-    throw new Error("3DS needs cross-origin isolation and SharedArrayBuffer. Reload the hosted site once to activate its isolation service worker, then try again.");
+    throw new Error("3DS needs cross-origin isolation and SharedArrayBuffer. Start the complete offline ZIP with Start-Web-Emu.cmd, or reload the hosted HTTPS site.");
   }
   if (!document.createElement("canvas").getContext("webgl2")) {
     throw new Error("Azahar requires WebGL 2. Enable hardware acceleration or use a compatible browser/device.");
@@ -21,7 +21,7 @@ export async function check3dsAvailability() {
     } catch (error) {
       throw new Error("Cannot reach the bundled Azahar runtime: " + error.message);
     }
-    if (!response.ok) throw new Error("Azahar runtime file is missing: " + path + " (HTTP " + response.status + "). Check the GitHub Pages build.");
+    if (!response.ok) throw new Error("Azahar runtime file is missing: " + path + " (HTTP " + response.status + "). Check that you extracted the complete offline ZIP or that the GitHub Pages build succeeded.");
   }
   return true;
 }
