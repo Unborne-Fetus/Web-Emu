@@ -1,82 +1,160 @@
 #!/usr/bin/env python3
-"""Vendor the Azahar/EmulatorJS nightly runtime for hosted and offline builds.
+"""Download EmulatorJS assets and every configured console's actual WASM core.
 
-A real archive is included in the output. The built game launcher never
-requests the core from an external site. All downloads happen at build time.
+All network access happens in GitHub Actions, never while playing offline.
+Core variants are discovered instead of assuming nonexistent thread/legacy
+builds exist for every libretro emulator.
 """
-from pathlib import Path
-from urllib.request import Request, urlopen
-from urllib.error import HTTPError, URLError
-from time import sleep
-import json
+from __future__ import annotations
 
-root = Path(__file__).resolve().parent.parent
-target = root / "vendor" / "emulatorjs"
-base = "https://cdn.emulatorjs.org/nightly/data/"
-assets = [
-    "loader.js", "emulator.min.js", "emulator.min.css", "version.json",
-    "emulator.css",
-    "cores/azahar-thread-wasm.data",
-    "cores/reports/azahar.json",
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
+import json
+import time
+
+ROOT = Path(__file__).resolve().parent.parent
+DATA = ROOT / "vendor" / "emulatorjs" / "data"
+BASE = "https://cdn.emulatorjs.org/nightly/data/"
+SYSTEMS = json.loads((ROOT / "cores" / "retro-systems.json").read_text(encoding="utf-8"))["systems"]
+CORES = {info["core"]: bool(info.get("threads")) for info in SYSTEMS.values()}
+if len(SYSTEMS) < 27:
+    raise SystemExit("The console manifest is incomplete")
+if len(CORES) < 20:
+    raise SystemExit("Expected more unique emulator cores")
+
+def download(relative: str, *, required: bool = True) -> bool:
+    dest = DATA / relative
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    last_error = None
+    for attempt in range(3 if required else 2):
+        try:
+            req = Request(BASE + relative, headers={"User-Agent": "Web-Emu-offline-builder/2.0"})
+            with urlopen(req, timeout=120) as source, dest.open("wb") as output:
+                while chunk := source.read(1024 * 1024):
+                    output.write(chunk)
+            if dest.stat().st_size < 10:
+                raise OSError("Downloaded file is empty")
+            print(f"Fetched {relative}: {dest.stat().st_size:,} bytes", flush=True)
+            return True
+        except HTTPError as error:
+            last_error = error
+            dest.unlink(missing_ok=True)
+            if error.code in (403, 404, 410) and not required:
+                print(f"Optional upstream asset unavailable: {relative} ({error.code})", flush=True)
+                return False
+            if error.code in (403, 404, 410) and required:
+                break
+        except (URLError, OSError, TimeoutError) as error:
+            last_error = error
+            dest.unlink(missing_ok=True)
+        if attempt < (2 if required else 1):
+            time.sleep(attempt + 1)
+    if required:
+        raise RuntimeError(f"Missing required offline asset {relative}: {last_error}")
+    print(f"Optional upstream asset skipped: {relative} ({last_error})", flush=True)
+    return False
+
+# Only these frontend assets are needed when the standard minified release is used.
+# Avoid hardcoded guessed src/vendor paths: they have broken nightly CI on 404.
+required_files = [
+    "loader.js",
+    "emulator.min.js",
+    "emulator.min.css",
     "compression/extractzip.js",
     "compression/extract7z.js",
     "compression/libunrar.js",
     "compression/libunrar.wasm",
+    "cores/azahar-thread-wasm.data",
 ]
-# Real libretro cores for Nintendo DS, NES, SNES, Nintendo 64,
-# Genesis/Game Gear/Master System, Atari 2600 and Virtual Boy.
-# Include every WASM variant: EmulatorJS chooses legacy/threads at runtime.
-retro_cores = (
-    "desmume", "fceumm", "snes9x", "mupen64plus_next",
-    "genesis_plus_gx", "stella2014", "beetle_vb",
-)
-for core_name in retro_cores:
-    assets.append(f"cores/reports/{core_name}.json")
-    for variant in ("-wasm", "-legacy-wasm", "-thread-wasm", "-thread-legacy-wasm"):
-        assets.append(f"cores/{core_name}{variant}.data")
+for rel in required_files:
+    download(rel)
 
-assets += [f"localization/{name}.json" for name in (
-    "ar", "bn", "de", "el", "en", "es", "fa", "fr", "hi", "it",
-    "ja", "jv", "km", "ko", "pt", "retroarch", "ro", "ru",
-    "tr", "ua", "ur", "vi", "zh"
-)]
-assets += [f"src/{name}.js" for name in (
-    "GameManager", "cache", "compression", "consts", "emulator",
-    "frontend", "gamepad", "license", "netplay", "nipplejs",
-    "setup", "shaders", "socket.io.min", "storage", "utils"
-)]
-assets += ["src/vendor/nipplejs.js", "src/vendor/socket.io.min.js"]
+# Language files are nice offline but not every upstream locale exists.
+optional_files = [
+    "version.json",
+    "emulator.css",
+    *[f"localization/{name}.json" for name in (
+        "en", "es", "fr", "de", "it", "ja", "zh", "ko", "pt", "ru",
+        "ar", "hi", "tr", "ro", "vi", "fa", "el", "bn", "km", "ur",
+    )],
+]
+with ThreadPoolExecutor(max_workers=5) as pool:
+    jobs = [pool.submit(download, rel, required=False) for rel in optional_files]
+    for future in as_completed(jobs):
+        future.result()
 
-def download(url, dest):
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    last_error = None
-    for attempt in range(4):
+# Every configured libretro emulator needs its own real build, not just a UI tab.
+# Threads are *required* by PPSSPP and DOSBox Pure; classic cores run single-threaded.
+# On a modern browser EmulatorJS loads -wasm, and on an older browser -legacy-wasm.
+# Download whichever builds actually exist for this nightly.
+variants = {}
+def fetch_core(core: str, threaded: bool) -> tuple[str, dict]:
+    prefix = f"cores/{core}{'-thread' if threaded else ''}"
+    found = {}
+    for style, suffix in (("webgl2", "-wasm.data"), ("legacy", "-legacy-wasm.data")):
+        rel = prefix + suffix
+        found[style] = download(rel, required=False)
+    if not any(found.values()):
+        raise RuntimeError(
+            f"Neither required {core} core variant exists upstream. "
+            "Refusing to publish an offline package that cannot run this system."
+        )
+
+    report_path = f"cores/reports/{core}.json"
+    if not download(report_path, required=False):
+        report = {"buildStart": 1, "name": core, "options": {}}
+    else:
         try:
-            req = Request(url, headers={"User-Agent": "Web-Emu-offline-builder/1.0"})
-            with urlopen(req, timeout=90) as source, dest.open("wb") as output:
-                while chunk := source.read(1024 * 1024):
-                    output.write(chunk)
-            if dest.stat().st_size < 10:
-                raise RuntimeError(f"Empty file: {url}")
-            print(f"Fetched {url} ({dest.stat().st_size:,} bytes)", flush=True)
-            return
-        except (HTTPError, URLError, OSError, RuntimeError) as error:
-            last_error = error
-            dest.unlink(missing_ok=True)
-            if attempt < 3:
-                sleep(attempt + 1)
-    raise SystemExit(f"Failed to download required offline asset {url}: {last_error}")
+            report = json.loads((DATA / report_path).read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            report = {"buildStart": 1, "name": core, "options": {}}
+    if not isinstance(report, dict):
+        report = {"buildStart": 1, "name": core, "options": {}}
+    if not isinstance(report.get("options"), dict):
+        report["options"] = {}
+    original_default = bool(report["options"].get("defaultWebGL2", True))
+    # Prefer the upstream rendering choice, unless that variant was unavailable.
+    report["options"]["defaultWebGL2"] = (
+        original_default if found["webgl2"] and found["legacy"]
+        else bool(found["webgl2"])
+    )
+    report["buildStart"] = report.get("buildStart") or 1
+    (DATA / report_path).write_text(json.dumps(report), encoding="utf-8")
+    return core, {"threads": threaded, **found}
 
-for name in assets:
-    download(base + name, target / "data" / name)
+with ThreadPoolExecutor(max_workers=4) as pool:
+    jobs = {pool.submit(fetch_core, core, thread): core for core, thread in CORES.items()}
+    for future in as_completed(jobs):
+        core, result = future.result()
+        variants[core] = result
 
-download("https://raw.githubusercontent.com/EmulatorJS/EmulatorJS/main/LICENSE",
-         target / "LICENSE-GPL-3.0.txt")
+# Azahar is a threaded, WebGL2-only 3DS core.
+azahar_report = "cores/reports/azahar.json"
+if not download(azahar_report, required=False):
+    (DATA / azahar_report).parent.mkdir(parents=True, exist_ok=True)
+    (DATA / azahar_report).write_text(
+        json.dumps({"buildStart": 1, "options": {"defaultWebGL2": True}}), encoding="utf-8"
+    )
+variants["azahar"] = {"threads": True, "webgl2": True, "legacy": False}
+(DATA / "cores" / "webemu-variants.json").write_text(
+    json.dumps(variants, indent=2, sort_keys=True), encoding="utf-8"
+)
 
-core = target / "data" / "cores" / "azahar-thread-wasm.data"
-if core.stat().st_size < 1_000_000:
-    raise SystemExit("Azahar archive is unexpectedly small; refusing to deploy")
-report = json.loads((target / "data" / "cores" / "reports" / "azahar.json").read_text())
-if not isinstance(report, dict):
-    raise SystemExit("Unexpected Azahar build report")
-print(f"EmulatorJS runtime bundled locally ({len(assets)} files; {len(retro_cores)} classic cores, 9 classic systems; Azahar {core.stat().st_size:,} bytes)")
+def fetch_license():
+    url = "https://raw.githubusercontent.com/EmulatorJS/EmulatorJS/main/LICENSE"
+    dest = ROOT / "vendor" / "emulatorjs" / "LICENSE-GPL-3.0.txt"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    req = Request(url, headers={"User-Agent": "Web-Emu-offline-builder/2.0"})
+    with urlopen(req, timeout=60) as source, dest.open("wb") as output:
+        while chunk := source.read(64 * 1024):
+            output.write(chunk)
+    if dest.stat().st_size < 1000:
+        raise RuntimeError("EmulatorJS license download incomplete")
+
+fetch_license()
+azahar_size = (DATA / "cores" / "azahar-thread-wasm.data").stat().st_size
+if azahar_size < 1_000_000:
+    raise RuntimeError("Azahar WASM archive too small")
+print(f"Bundled {len(SYSTEMS)} classic console variants using {len(CORES)} unique libretro WASM cores plus Azahar ({azahar_size:,} bytes)", flush=True)
