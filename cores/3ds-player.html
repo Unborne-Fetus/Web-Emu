@@ -18,10 +18,9 @@
 <div id="starting" role="status">Waiting for a 3DS game…</div>
 <script>
 "use strict";
-// The 3DS core is hosted locally with this site. The user's game is a local Blob
-// URL, not a network upload. Everything runs inside this same-origin iframe.
+// The 3DS core is hosted locally with this site. The user's game is a local File
+// object, not a network upload. Everything runs inside this same-origin iframe.
 let session = null;
-let romUrl = null;
 let started = false;
 const loading = document.getElementById("starting");
 const origin = location.origin;
@@ -62,15 +61,14 @@ window.addEventListener("message", event => {
   }
   started = true;
   show("Loading Azahar 3DS browser core…");
-  romUrl = URL.createObjectURL(data.file);
-  let gameId = 0;
+    let gameId = 0;
   const fingerprint = data.file.name.toLowerCase() + ":" + data.file.size;
   for (const char of fingerprint) gameId = (Math.imul(gameId, 31) + char.charCodeAt(0)) | 0;
   window.EJS_player = "#game";
   window.EJS_core = "3ds";
   window.EJS_gameName = data.file.name.replace(/\.[^.]+$/, "");
   window.EJS_gameID = gameId >>> 0;
-  window.EJS_gameUrl = romUrl;
+  window.EJS_gameUrl = data.file;
   window.EJS_pathtodata = new URL("../vendor/emulatorjs/data/", location.href).href;
   window.EJS_threads = true; // The Azahar core cannot run in unthreaded mode.
   window.EJS_startOnLoaded = true;
@@ -89,9 +87,6 @@ window.addEventListener("message", event => {
   loader.src = window.EJS_pathtodata + "loader.js";
   loader.onerror = () => tell("error", "Unable to load the bundled EmulatorJS/Azahar runtime. Check the Pages deployment.");
   document.head.appendChild(loader);
-});
-window.addEventListener("pagehide", () => {
-  if (romUrl) URL.revokeObjectURL(romUrl);
 });
 </script>
 </body>
