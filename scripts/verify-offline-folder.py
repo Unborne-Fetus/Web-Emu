@@ -38,7 +38,7 @@ for rel in required:
         raise SystemExit(f"Offline ZIP incomplete: missing {rel}")
 if (root / "runtime/node.exe").open("rb").read(2) != b"MZ":
     raise SystemExit("Bundled Windows node.exe isn't a Windows executable")
-if (root / "vendor/mgba.wasm").open("rb").read(4) != b"\\0asm":
+if (root / "vendor/mgba.wasm").open("rb").read(4) != bytes([0, 97, 115, 109]):
     raise SystemExit("Bundled mGBA core is not WebAssembly")
 if (root / "vendor/emulatorjs/data/cores/azahar-thread-wasm.data").stat().st_size < 1_000_000:
     raise SystemExit("Azahar WebAssembly core is incomplete")
