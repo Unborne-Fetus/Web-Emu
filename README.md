@@ -8,7 +8,7 @@
 
 ## Play completely offline on Windows (GB, GBC, GBA, 2DS, 3DS)
 
-1. Open [Actions → Deploy Web Emu](https://github.com/Unborne-Fetus/Web-Emu/actions/workflows/pages.yml), select a **successful** run, and download **Web-Emu-Offline-All-Systems** from the artifacts.
+1. Open [Actions → Build Offline Web Emu](https://github.com/Unborne-Fetus/Web-Emu/actions/workflows/offline-windows.yml), select a **successful** run, and download **Web-Emu-Offline-All-Systems** from its artifacts.
 2. **Extract the entire ZIP** to a folder, not just the launcher.
 3. Double-click **`Start-Web-Emu.cmd`**. The included Node Windows runtime starts a local browser service and opens **http://127.0.0.1:8765/**.
 4. Open the **2DS / 3DS** tab for a compatible `.3ds`, `.cci`, or `.cxi` game, or use the **GB / GBC / GBA** tab.
