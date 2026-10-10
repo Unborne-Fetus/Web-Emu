@@ -15,7 +15,7 @@ target = root / "vendor" / "emulatorjs"
 base = "https://cdn.emulatorjs.org/nightly/data/"
 assets = [
     "loader.js", "emulator.min.js", "emulator.min.css", "version.json",
-    "emulator.js", "emulator.css",
+    "emulator.css",
     "cores/azahar-thread-wasm.data",
     "cores/reports/azahar.json",
     "compression/extractzip.js",
@@ -23,6 +23,18 @@ assets = [
     "compression/libunrar.js",
     "compression/libunrar.wasm",
 ]
+# Real libretro cores for Nintendo DS, NES, SNES, Nintendo 64,
+# Genesis/Game Gear/Master System, Atari 2600 and Virtual Boy.
+# Include every WASM variant: EmulatorJS chooses legacy/threads at runtime.
+retro_cores = (
+    "desmume", "fceumm", "snes9x", "mupen64plus_next",
+    "genesis_plus_gx", "stella2014", "beetle_vb",
+)
+for core_name in retro_cores:
+    assets.append(f"cores/reports/{core_name}.json")
+    for variant in ("-wasm", "-legacy-wasm", "-thread-wasm", "-thread-legacy-wasm"):
+        assets.append(f"cores/{core_name}{variant}.data")
+
 assets += [f"localization/{name}.json" for name in (
     "ar", "bn", "de", "el", "en", "es", "fa", "fr", "hi", "it",
     "ja", "jv", "km", "ko", "pt", "retroarch", "ro", "ru",
@@ -67,4 +79,4 @@ if core.stat().st_size < 1_000_000:
 report = json.loads((target / "data" / "cores" / "reports" / "azahar.json").read_text())
 if not isinstance(report, dict):
     raise SystemExit("Unexpected Azahar build report")
-print(f"EmulatorJS runtime bundled locally ({len(assets)} files; Azahar {core.stat().st_size:,} bytes)")
+print(f"EmulatorJS runtime bundled locally ({len(assets)} files; {len(retro_cores)} classic cores, 9 classic systems; Azahar {core.stat().st_size:,} bytes)")
