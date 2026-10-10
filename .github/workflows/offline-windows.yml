@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   offline-windows:
-    name: Offline Windows (14 console variants)
+    name: Offline Windows (32 console variants)
     runs-on: ubuntu-latest
     steps:
       - name: Check out Web Emu
@@ -29,6 +29,7 @@ jobs:
         run: |
           set -euo pipefail
           git clone --depth 1 --branch v0.1.1 https://github.com/wasm-gaming/mGBA-wasm.git upstream || git clone --depth 1 https://github.com/wasm-gaming/mGBA-wasm.git upstream
+          python3 scripts/patch-mgba-speed.py
           npm install --no-save --no-package-lock esbuild@0.25.12 @wasm-gaming/engine-specs@0.2.6
           mkdir -p vendor
           ./node_modules/.bin/esbuild upstream/src/mgba.sdk.ts --bundle --format=esm --platform=browser --target=es2022 --outfile=vendor/mgba-sdk.js
@@ -38,10 +39,10 @@ jobs:
           test -s vendor/mgba.js
           test -s vendor/mgba.wasm
 
-      - name: Download Azahar and seven classic libretro cores
+      - name: Download Azahar and all 24 retro libretro cores
         run: python3 scripts/fetch-emulatorjs-azahar.py
 
-      - name: Verify 3DS and nine classic console player scripts
+      - name: Verify all 32 supported console variants
         run: python3 scripts/verify-3ds-assets.py
 
       - name: Assemble offline package
@@ -72,11 +73,28 @@ jobs:
           curl -fsSI http://127.0.0.1:8765/vendor/emulatorjs/data/cores/azahar-thread-wasm.data
           curl -fsSI http://127.0.0.1:8765/vendor/mgba.wasm
           curl -fsSI http://127.0.0.1:8765/cores/retro-player.html
-          for core in desmume fceumm snes9x mupen64plus_next genesis_plus_gx stella2014 beetle_vb; do
-            curl -fsSI "http://127.0.0.1:8765/vendor/emulatorjs/data/cores/${core}-wasm.data" >/dev/null
-            curl -fsSI "http://127.0.0.1:8765/vendor/emulatorjs/data/cores/${core}-legacy-wasm.data" >/dev/null
-          done
-          echo 'Offline file access and shared-memory isolation headers OK'
+          curl -fsSI http://127.0.0.1:8765/cores/retro-systems.json
+          curl -fsSI http://127.0.0.1:8765/vendor/emulatorjs/data/cores/ppsspp-assets.zip
+          python3 - <<'PY'
+          from pathlib import Path
+          import json, urllib.request
+          package=Path("dist-offline-complete/Web-Emu-Offline")
+          variants=json.loads((package/"vendor/emulatorjs/data/cores/webemu-variants.json").read_text())
+          catalog=json.loads((package/"cores/retro-systems.json").read_text())["systems"]
+          assert len(catalog) == 27
+          for core, info in variants.items():
+              if core == "azahar": continue
+              if not info["webgl2"] and not info["legacy"]:
+                  raise SystemExit("No bundled WASM core: "+core)
+              prefix=core+("-thread" if info["threads"] else "")
+              suffix="-wasm.data" if info["webgl2"] else "-legacy-wasm.data"
+              url="http://127.0.0.1:8765/vendor/emulatorjs/data/cores/"+prefix+suffix
+              request=urllib.request.Request(url, method="HEAD")
+              with urllib.request.urlopen(request,timeout=5) as response:
+                  if response.status != 200: raise SystemExit("Missing offline core: "+url)
+          print("PASS: Every configured console core is served from localhost, not the internet.")
+          PY
+          echo 'All 32 console variants configured; local WASM access and COOP/COEP headers verified'
 
       - name: Upload ready-to-extract Windows offline ZIP
         uses: actions/upload-artifact@v4
