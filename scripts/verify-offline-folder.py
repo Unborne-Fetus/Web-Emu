@@ -23,6 +23,7 @@ required = (
     "vendor/emulatorjs/data/emulator.min.js",
     "vendor/emulatorjs/data/emulator.min.css",
     "vendor/emulatorjs/data/cores/azahar-thread-wasm.data",
+    "vendor/emulatorjs/data/cores/ppsspp-assets.zip",
     "vendor/emulatorjs/data/cores/reports/azahar.json",
     "vendor/emulatorjs/data/cores/webemu-variants.json",
     "vendor/emulatorjs/data/compression/extractzip.js",
