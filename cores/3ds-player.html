@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Web Emu · Azahar 3DS</title>
+<style>
+  :root{color-scheme:dark;font-family:system-ui,sans-serif;background:#080507;color:#fff}
+  *{box-sizing:border-box}
+  html,body{width:100%;height:100%;margin:0;overflow:hidden}
+  #game{width:100%;height:100%;min-height:0;display:block}
+  #starting{display:grid;place-items:center;position:absolute;inset:0;padding:22px;background:#10080e;text-align:center;color:#e8c5cd;font-size:14px}
+  #starting[hidden]{display:none}
+</style>
+</head>
+<body>
+<div id="game"></div>
+<div id="starting" role="status">Waiting for a 3DS game…</div>
+<script>
+"use strict";
+// The 3DS core is hosted locally with this site. The user's game is a local Blob
+// URL, not a network upload. Everything runs inside this same-origin iframe.
+let session = null;
+let romUrl = null;
+let started = false;
+const loading = document.getElementById("starting");
+const origin = location.origin;
+function tell(type, message) {
+  if (!session) return;
+  parent.postMessage({ emulator: "webemu-azahar", session, type, message }, origin);
+}
+function show(message) { loading.hidden = false; loading.textContent = message; }
+window.addEventListener("error", event => {
+  if (started) tell("error", "Emulator error: " + (event.message || "unknown"));
+});
+window.addEventListener("unhandledrejection", event => {
+  if (started) tell("error", "Azahar startup failed: " + (event.reason?.message || String(event.reason)));
+});
+window.addEventListener("message", event => {
+  if (event.origin !== origin || event.source !== parent || !event.data || event.data.emulator !== "webemu-azahar") return;
+  const data = event.data;
+  if (data.type === "stop" && data.session === session) {
+    // EmulatorJS persists in-game saves through browser storage. Trigger a
+    // best-effort save before the parent disposes of this document.
+    try { window.EJS_emulator?.gameManager?.saveSaveFiles?.(); } catch (error) { console.warn(error); }
+    try { window.EJS_emulator?.pause?.(); } catch (_) {}
+    return;
+  }
+  if (data.type !== "start" || started) return;
+  session = data.session;
+  if (!(data.file instanceof File) || !/\.(3ds|cci|cxi)$/i.test(data.file.name)) {
+    tell("error", "Unsupported file. Use a .3ds, .cci, or .cxi game image.");
+    return;
+  }
+  if (!crossOriginIsolated || typeof SharedArrayBuffer === "undefined") {
+    tell("error", "SharedArrayBuffer is not available. Reload the HTTPS site to enable cross-origin isolation.");
+    return;
+  }
+  if (!document.createElement("canvas").getContext("webgl2")) {
+    tell("error", "This browser/device cannot create the WebGL 2 graphics context Azahar requires.");
+    return;
+  }
+  started = true;
+  show("Loading Azahar 3DS browser core…");
+  romUrl = URL.createObjectURL(data.file);
+  let gameId = 0;
+  const fingerprint = data.file.name.toLowerCase() + ":" + data.file.size;
+  for (const char of fingerprint) gameId = (Math.imul(gameId, 31) + char.charCodeAt(0)) | 0;
+  window.EJS_player = "#game";
+  window.EJS_core = "3ds";
+  window.EJS_gameName = data.file.name.replace(/\.[^.]+$/, "");
+  window.EJS_gameID = gameId >>> 0;
+  window.EJS_gameUrl = romUrl;
+  window.EJS_pathtodata = new URL("../vendor/emulatorjs/data/", location.href).href;
+  window.EJS_threads = true; // The Azahar core cannot run in unthreaded mode.
+  window.EJS_startOnLoaded = true;
+  window.EJS_color = "#a31936";
+  window.EJS_volume = 0.75;
+  window.EJS_ready = function () {
+    loading.hidden = true;
+    tell("ready", "");
+  };
+  window.EJS_onGameStart = function () {
+    loading.hidden = true;
+    tell("playing", "");
+  };
+  window.EJS_onExit = function () { tell("status", "3DS game exited. Choose another game or stop the emulator."); };
+  const loader = document.createElement("script");
+  loader.src = window.EJS_pathtodata + "loader.js";
+  loader.onerror = () => tell("error", "Unable to load the bundled EmulatorJS/Azahar runtime. Check the Pages deployment.");
+  document.head.appendChild(loader);
+});
+window.addEventListener("pagehide", () => {
+  if (romUrl) URL.revokeObjectURL(romUrl);
+});
+</script>
+</body>
+</html>
