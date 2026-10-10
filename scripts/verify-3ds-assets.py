@@ -24,6 +24,7 @@ required = [
     "compression/extractzip.js", "compression/extract7z.js",
     "compression/libunrar.js", "compression/libunrar.wasm",
     "cores/reports/azahar.json", "cores/azahar-thread-wasm.data",
+    "cores/ppsspp-assets.zip",
 ]
 for rel in required:
     path = runtime / rel
