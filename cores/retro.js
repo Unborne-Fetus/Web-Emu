@@ -10,7 +10,7 @@ export const SYSTEMS = Object.freeze({
   segaMD: { label: "Sega Genesis", core: "genesis_plus_gx", extensions: ["md", "gen", "bin"] },
   segaGG: { label: "Game Gear", core: "genesis_plus_gx", extensions: ["gg"] },
   segaMS: { label: "Sega Master System", core: "genesis_plus_gx", extensions: ["sms"] },
-  atari2600: { label: "Atari 2600", core: "stella2014", extensions: ["a26"] },
+  atari2600: { label: "Atari 2600", core: "stella2014", extensions: ["a26", "bin"] },
   vb: { label: "Virtual Boy", core: "beetle_vb", extensions: ["vb"] }
 });
 
