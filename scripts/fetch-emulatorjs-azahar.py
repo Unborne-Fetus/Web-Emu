@@ -67,6 +67,7 @@ required_files = [
     "compression/libunrar.js",
     "compression/libunrar.wasm",
     "cores/azahar-thread-wasm.data",
+    "cores/ppsspp-assets.zip",
 ]
 for rel in required_files:
     download(rel)
