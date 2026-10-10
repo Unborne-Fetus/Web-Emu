@@ -11,7 +11,7 @@
 1. Open [Actions → Build Offline Web Emu](https://github.com/Unborne-Fetus/Web-Emu/actions/workflows/offline-windows.yml), select a **successful** run, and download **Web-Emu-Offline-All-Systems** from its artifacts.
 2. **Extract the entire ZIP** to a folder, not just the launcher.
 3. Double-click **`Start-Web-Emu.cmd`**. The included Node Windows runtime starts a local browser service and opens **http://127.0.0.1:8765/**.
-4. Choose **GB / GBC / GBA**, **2DS / 3DS**, or **More consoles**. The More consoles tab contains 27 systems with their own emulation cores and supported game formats. You can optionally provide your own BIOS/firmware file when needed.
+4. Choose a **family tab** (Nintendo, Sega, Atari, PlayStation, Handhelds, NEC, Other consoles, or Arcade & computers) then click the **individual console tab** you want. Game Boy and 2DS/3DS have their own top-level tabs. You can optionally provide your own BIOS/firmware file where required.
 5. Keep the launcher window open while playing. Closing it stops the local server. **You can disconnect from the Internet and keep playing.**
 
 **No installer, npm, Python, GitHub Pages, separate Node download, or Internet connection is required after extracting the completed ZIP.** No games or proprietary Nintendo keys/firmware are included. Use game images you are authorized to use.
@@ -83,7 +83,10 @@ These systems use **actual EmulatorJS/libretro WebAssembly cores**, with the sou
 | Panasonic 3DO | opera | \`.chd\`, \`.iso\`, \`.cue\` |
 | Sega Saturn | yabause | \`.chd\`, \`.cue\`, \`.iso\` |
 
-**Opening games:** In **More consoles**, choose the system first. The file picker filters to its supported extensions. Game files remain on the local computer; Web Emu's offline server listens only on `127.0.0.1`.
+**Opening games:** Choose a console family along the top, then select the console from its **own button/tab** (no dropdown). For example: Sega → Genesis, Master System, Game Gear, CD, 32X, or Saturn. Atari → 2600, 5200, 7800, or Lynx. PlayStation → PS1 or PSP. The file picker filters to the selected console's supported extensions. Game files remain on your computer; the offline server listens only on `127.0.0.1`.
+
+
+**Navigation:** Console family tabs are grouped across the top. Clicking a system's dedicated button highlights it and shows its game formats and BIOS notes; the emulator loads the selected system's core. Changing families never requires searching a long dropdown. On phones, the buttons wrap into accessible rows.
 
 **CD games and firmware:** Some PS1, Sega CD, Saturn, 3DO, TurboGrafx-CD, Intellivision, ColecoVision, Amiga, and Atari 5200 titles need an original BIOS or other firmware. Click **Select BIOS (optional)** to supply a file you legitimately own; none is bundled. A single-file `.chd` disc image is often simpler than `.cue` plus separate track files. **This launcher does not yet assemble separate disc-track files automatically**. CUE files referring to additional tracks may therefore fail.
 
