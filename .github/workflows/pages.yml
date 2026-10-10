@@ -84,15 +84,8 @@ jobs:
           curl --fail --location --silent --show-error --retry 3 https://raw.githubusercontent.com/EmulatorJS/EmulatorJS/main/LICENSE -o vendor/emulatorjs/LICENSE-GPL-3.0.txt
           test -s vendor/emulatorjs/LICENSE-GPL-3.0.txt
           echo 'Azahar 3DS WebAssembly core staged for GitHub Pages.'
-      - name: Verify Azahar launcher assets
-        run: |
-          test -s cores/3ds.js
-          test -s cores/3ds-player.html
-          test -s coi-serviceworker.js
-          test -s vendor/emulatorjs/data/cores/azahar-thread-wasm.data
-          grep -q 'EJS_threads = true' cores/3ds-player.html
-          grep -q 'crossOriginIsolated' cores/3ds.js
-          grep -q 'threeDsHost' index.html
+      - name: Verify Azahar browser files and JavaScript syntax
+        run: python3 scripts/verify-3ds-assets.py
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
