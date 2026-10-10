@@ -1,8 +1,8 @@
 # Web Emu
 
-**Web Emu** is a browser-based game emulator focused exclusively on **Game Boy Advance (GBA)** for its first release.
+**Web Emu** is a browser-based emulator for Game Boy, Game Boy Color, Game Boy Advance, and an experimental browser version of Nintendo 2DS / 3DS emulation using Azahar through EmulatorJS.
 
-The goal is straightforward: **double-click `index.html`, open your own `.gba` file, and play**, with no installer, terminal commands, accounts, server, or manual BIOS download. The long-term goal is a **self-contained, offline-capable HTML file**.
+The legacy GB/GBC/GBA launcher aims to be usable by double-clicking `index.html`. **Azahar 3DS is different**: it needs WebAssembly threads, cross-origin isolation, WebGL 2, and HTTPS (or localhost). It cannot run from a standalone `file://` HTML file.
 
 > **Development status: early alpha.** The interface and mGBA integration are under development. ROM boot, audio, and save persistence have **not yet passed end-to-end testing**. Do not treat the current build as reliable for important saves.
 
@@ -33,6 +33,22 @@ Gamepads are intended to be supported through the emulator core.
 Use the game's regular in-game **Save** option. The mGBA wrapper can persist battery-backed saves to browser storage (OPFS) when available. That storage is scoped to a particular browser origin and can be deleted when site data is cleared. **`file://` pages may not have dependable persistent storage**, even if the page opens successfully. Autosaving therefore remains **experimental** until tested in supported browsers.
 
 Save states are separate from the game's battery save. Export any important save-state backup, and avoid relying on unverified automatic persistence.
+
+## Nintendo 2DS / 3DS (Azahar browser runtime)
+
+The **2DS / 3DS** tab uses the actual [Azahar](https://github.com/azahar-emu/azahar) emulator port bundled through [EmulatorJS](https://github.com/EmulatorJS/EmulatorJS). This is a **nightly, experimental threaded WASM core**, not a mock display. It is built into the **GitHub Pages deployment** by `.github/workflows/pages.yml` and intentionally not embedded in the one-file offline download.
+
+- Open the **hosted GitHub Pages site** through HTTPS, then choose **2DS / 3DS**.
+- Select your own compatible **`.3ds`, `.cci` or `.cxi`** game image.
+- Azahar loads inside its own iframe and provides its dual-screen layout, lower-screen touch input, controller mapping, and emulation menu.
+- ROM data is handled locally in the browser; there is no ROM upload endpoint. EmulatorJS stores supported saves in the browser's own storage; back up important game progress with its export options.
+- **`.cia` installer packages aren't supported** by this direct-ROM launcher. Files that require decryption will not launch as-is.
+- Azahar requires `crossOriginIsolated === true`, `SharedArrayBuffer`, and **WebGL 2**. The bundled [coi-serviceworker](https://github.com/gzuidhof/coi-serviceworker) supplies COOP/COEP headers on GitHub Pages; the first hosted page load may reload once. A regular local web server without those headers is insufficient.
+- It is not part of the standalone offline index. Devices with little RAM, low WebGL support, or older mobile browsers may not work. Game compatibility and save persistence are **not yet verified end to end**.
+
+**How the deploy works:** the Pages workflow downloads matching EmulatorJS nightly `loader.js`, frontend JS/CSS, archive helpers, and `azahar-thread-wasm.data` into `vendor/emulatorjs/data/`, checks their existence, and deploys them on the same origin as the website. No commercial games, official firmware, keys, or Nintendo BIOS data are bundled.
+
+**Diagnostics:** if the 3DS tab reports missing WebAssembly core files, check the **Bundle threaded Azahar core** step in the latest [Deploy Web Emu](https://github.com/Unborne-Fetus/Web-Emu/actions/workflows/pages.yml) workflow. If it reports SharedArrayBuffer, use the HTTPS site and reload; if it reports WebGL 2, enable browser hardware acceleration or use supported hardware. Azahar's embedded UI controls saving and in-game settings.
 
 ## Experimental standalone offline build
 
@@ -87,12 +103,12 @@ The mGBA wrapper can run GBA games without a supplied official BIOS using its bu
 3. Package the runtime into a self-contained HTML download, if browser security restrictions permit.
 4. Test and strengthen save persistence and provide portable backup/export.
 5. Enable speed controls, refine touchscreen/gamepad support, and perform cross-browser testing.
-6. Only consider other consoles after GBA is stable.
+6. Verify Azahar 3DS ROM boot, touch controls, audio, frame rate, saving, and cross-browser compatibility on the hosted site.
 
 ## Legal and credits
 
-Web Emu does **not** distribute commercial ROMs or Nintendo BIOS files. Use ROMs you have the rights to use.
+Web Emu does **not** distribute commercial ROMs, Nintendo firmware, keys or BIOS files. Use ROMs you have the rights to use.
 
-Emulation is powered by [mGBA](https://github.com/mgba-emu/mgba) and the [wasm-gaming mGBA browser wrapper](https://github.com/wasm-gaming/mGBA-wasm). The wrapper and mGBA are licensed under **Mozilla Public License 2.0 (MPL-2.0)**. Future distributable offline bundles must retain the applicable license notices and comply with license requirements.
+GB/GBC/GBA emulation uses [mGBA](https://github.com/mgba-emu/mgba) and the [wasm-gaming mGBA browser wrapper](https://github.com/wasm-gaming/mGBA-wasm), licensed under **MPL-2.0**. 2DS/3DS emulation uses **Azahar through EmulatorJS**, which include **GPL-3.0-licensed components**; the Pages build includes the EmulatorJS GPL license file and the upstream project links provide source code. The [coi-serviceworker](https://github.com/gzuidhof/coi-serviceworker) is MIT licensed; its notice is in `licenses/`. Redistributors must comply with all applicable component licenses.
 
 This project is independent of Nintendo and is not affiliated with or endorsed by Nintendo.
