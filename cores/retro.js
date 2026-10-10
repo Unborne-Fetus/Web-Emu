@@ -1,4 +1,4 @@
-// Shared EmulatorJS adapter for nine offline retro console families.
+// Shared EmulatorJS adapter for 27 offline console/computer variants.
 // ROMs stay on the user's device. The matching libretro WASM core is local.
 const runtimeRoot = new URL("../vendor/emulatorjs/data/", import.meta.url);
 const playerUrl = new URL("./retro-player.html", import.meta.url);
