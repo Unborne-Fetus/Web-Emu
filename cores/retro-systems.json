@@ -1,0 +1,277 @@
+{
+  "systems": {
+    "nds": {
+      "label": "Nintendo DS",
+      "core": "desmume",
+      "extensions": [
+        "nds"
+      ],
+      "group": "Nintendo & classic"
+    },
+    "nes": {
+      "label": "NES / Famicom",
+      "core": "fceumm",
+      "extensions": [
+        "nes"
+      ],
+      "group": "Nintendo & classic"
+    },
+    "snes": {
+      "label": "Super Nintendo",
+      "core": "snes9x",
+      "extensions": [
+        "sfc",
+        "smc"
+      ],
+      "group": "Nintendo & classic"
+    },
+    "n64": {
+      "label": "Nintendo 64",
+      "core": "mupen64plus_next",
+      "extensions": [
+        "n64",
+        "z64",
+        "v64"
+      ],
+      "group": "Nintendo & classic"
+    },
+    "segaMD": {
+      "label": "Sega Genesis / Mega Drive",
+      "core": "genesis_plus_gx",
+      "extensions": [
+        "md",
+        "gen",
+        "bin"
+      ],
+      "group": "Sega"
+    },
+    "segaGG": {
+      "label": "Sega Game Gear",
+      "core": "genesis_plus_gx",
+      "extensions": [
+        "gg"
+      ],
+      "group": "Sega"
+    },
+    "segaMS": {
+      "label": "Sega Master System",
+      "core": "genesis_plus_gx",
+      "extensions": [
+        "sms"
+      ],
+      "group": "Sega"
+    },
+    "atari2600": {
+      "label": "Atari 2600",
+      "core": "stella2014",
+      "extensions": [
+        "a26",
+        "bin"
+      ],
+      "group": "Atari & other handhelds"
+    },
+    "vb": {
+      "label": "Virtual Boy",
+      "core": "beetle_vb",
+      "extensions": [
+        "vb"
+      ],
+      "group": "Nintendo & classic"
+    },
+    "psx": {
+      "label": "PlayStation 1",
+      "core": "pcsx_rearmed",
+      "extensions": [
+        "chd",
+        "pbp",
+        "cue",
+        "iso",
+        "bin",
+        "img"
+      ],
+      "group": "PlayStation",
+      "biosNote": "Some games require your own compatible PS1 firmware. Single-file CHD/PBP is easiest."
+    },
+    "segaCD": {
+      "label": "Sega CD / Mega-CD",
+      "core": "genesis_plus_gx",
+      "extensions": [
+        "chd",
+        "cue",
+        "iso"
+      ],
+      "group": "Sega",
+      "biosNote": "Sega CD BIOS required for many titles; use your own firmware."
+    },
+    "sega32x": {
+      "label": "Sega 32X",
+      "core": "picodrive",
+      "extensions": [
+        "32x",
+        "bin",
+        "md"
+      ],
+      "group": "Sega"
+    },
+    "atari7800": {
+      "label": "Atari 7800",
+      "core": "prosystem",
+      "extensions": [
+        "a78",
+        "bin"
+      ],
+      "group": "Atari & other handhelds"
+    },
+    "lynx": {
+      "label": "Atari Lynx",
+      "core": "handy",
+      "extensions": [
+        "lnx",
+        "lyx"
+      ],
+      "group": "Atari & other handhelds"
+    },
+    "ngp": {
+      "label": "Neo Geo Pocket / Color",
+      "core": "mednafen_ngp",
+      "extensions": [
+        "ngp",
+        "ngc"
+      ],
+      "group": "Atari & other handhelds"
+    },
+    "ws": {
+      "label": "WonderSwan / Color",
+      "core": "mednafen_wswan",
+      "extensions": [
+        "ws",
+        "wsc"
+      ],
+      "group": "Atari & other handhelds"
+    },
+    "pce": {
+      "label": "TurboGrafx-16 / PC Engine",
+      "core": "mednafen_pce",
+      "extensions": [
+        "pce",
+        "sgx",
+        "chd",
+        "cue"
+      ],
+      "group": "Atari & other handhelds",
+      "biosNote": "CD games may require system card firmware."
+    },
+    "coleco": {
+      "label": "ColecoVision",
+      "core": "gearcoleco",
+      "extensions": [
+        "col",
+        "rom",
+        "bin"
+      ],
+      "group": "Other home consoles",
+      "biosNote": "Some ColecoVision games require firmware."
+    },
+    "intv": {
+      "label": "Intellivision",
+      "core": "freeintv",
+      "extensions": [
+        "int",
+        "rom",
+        "bin"
+      ],
+      "group": "Other home consoles",
+      "biosNote": "Original Intellivision firmware may be necessary."
+    },
+    "atari5200": {
+      "label": "Atari 5200",
+      "core": "a5200",
+      "extensions": [
+        "a52",
+        "bin",
+        "rom"
+      ],
+      "group": "Atari & other handhelds",
+      "biosNote": "System firmware may be required."
+    },
+    "psp": {
+      "label": "PlayStation Portable (PSP)",
+      "core": "ppsspp",
+      "extensions": [
+        "iso",
+        "cso",
+        "pbp"
+      ],
+      "threads": true,
+      "group": "PlayStation",
+      "biosNote": "Threaded WebAssembly and WebGL 2 required."
+    },
+    "arcade": {
+      "label": "Arcade (FBNeo)",
+      "core": "fbneo",
+      "extensions": [
+        "zip",
+        "7z"
+      ],
+      "group": "Advanced systems",
+      "biosNote": "Arcade ROM sets must match the core; some games require parent/BIOS files."
+    },
+    "dos": {
+      "label": "MS-DOS (DOSBox Pure)",
+      "core": "dosbox_pure",
+      "extensions": [
+        "zip",
+        "dosz"
+      ],
+      "threads": true,
+      "group": "Advanced systems",
+      "biosNote": "Runs compatible DOS games packaged as ZIP, not Windows applications."
+    },
+    "c64": {
+      "label": "Commodore 64",
+      "core": "vice_x64sc",
+      "extensions": [
+        "d64",
+        "t64",
+        "prg",
+        "crt",
+        "tap"
+      ],
+      "group": "Advanced systems"
+    },
+    "amiga": {
+      "label": "Commodore Amiga",
+      "core": "puae",
+      "extensions": [
+        "adf",
+        "hdf",
+        "ipf",
+        "zip"
+      ],
+      "group": "Advanced systems",
+      "biosNote": "Kickstart firmware may be needed."
+    },
+    "3do": {
+      "label": "Panasonic 3DO",
+      "core": "opera",
+      "extensions": [
+        "chd",
+        "iso",
+        "cue"
+      ],
+      "group": "Advanced systems",
+      "biosNote": "3DO system BIOS generally required."
+    },
+    "segaSaturn": {
+      "label": "Sega Saturn",
+      "core": "yabause",
+      "extensions": [
+        "chd",
+        "cue",
+        "iso"
+      ],
+      "group": "Advanced systems",
+      "biosNote": "Saturn BIOS may be required; performance is experimental."
+    }
+  }
+}
