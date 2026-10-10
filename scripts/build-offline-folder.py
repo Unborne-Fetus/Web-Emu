@@ -53,6 +53,9 @@ for name, threaded in cores.items():
                for suffix in ("-wasm.data", "-legacy-wasm.data")):
         raise SystemExit(f"Offline package cannot run {name}: no matching WASM core")
 
+psp_assets = root / "vendor/emulatorjs/data/cores/ppsspp-assets.zip"
+if psp_assets.stat().st_size < 5_000_000 or psp_assets.open("rb").read(4)[:2] != b"PK":
+    raise SystemExit("Missing / invalid PPSSPP assets ZIP: PSP cannot initialize offline")
 if (root / "vendor/emulatorjs/data/cores/azahar-thread-wasm.data").stat().st_size < 1_000_000:
     raise SystemExit("Azahar core appears truncated")
 if output.exists():
