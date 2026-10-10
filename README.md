@@ -35,10 +35,10 @@ All nine systems below use **actual bundled EmulatorJS / libretro WebAssembly co
 | Sega Genesis / Mega Drive | Genesis Plus GX | `.md`, `.gen`, `.bin` |
 | Sega Game Gear | Genesis Plus GX | `.gg` |
 | Sega Master System | Genesis Plus GX | `.sms` |
-| Atari 2600 | Stella 2014 | `.a26` |
+| Atari 2600 | Stella 2014 | `.a26`, `.bin` |
 | Virtual Boy | Beetle VB | `.vb` |
 
-Click **Classic consoles**, select the correct system, and click **Open game**. The default Nintendo DS core is DeSmuME; it does **not** require distributing proprietary DS firmware files to start games. Some games still have BIOS, performance, input, or accuracy limitations, and none of the nine has yet been verified against a representative library of games.
+Click **Classic consoles**, select the correct system, and click **Open game**. Since `.bin` is shared by Atari and Sega cartridges, select the correct console before opening a `.bin` file. The default Nintendo DS core is DeSmuME; it does **not** require distributing proprietary DS firmware files to start games. Some games still have BIOS, performance, input, or accuracy limitations, and none of the nine has yet been verified against a representative library of games.
 
 The `Core` switch inside EmulatorJS may offer upstream alternatives that aren't in the minimal offline bundle. Keep the listed default core when offline. Nintendo 64 and DS may run more slowly than the older 2D systems. Browser touchscreens map to DS lower-screen touch controls within EmulatorJS.
 
