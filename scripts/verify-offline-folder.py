@@ -67,7 +67,10 @@ if './vendor/mgba-sdk.js' not in index:
     raise SystemExit("GBA player does not use its bundled SDK")
 for rel in ("scripts/offline-server.cjs", "cores/3ds.js", "cores/retro.js"):
     p = root / rel
-    proc = subprocess.run(["node", "--check", str(p)], capture_output=True, text=True)
+    proc = subprocess.run(
+        ["node", "--input-type=module", "--check"],
+        input=p.read_text(encoding="utf-8"), capture_output=True, text=True
+    )
     if proc.returncode:
         raise SystemExit(f"JavaScript parse failed: {rel}: {proc.stderr}")
 retro_player = (root / "cores/retro-player.html").read_text(encoding="utf-8")
@@ -86,8 +89,8 @@ for core in retro_cores:
             raise SystemExit(f"Core data appears truncated: {p}")
 import re
 for label, source in (
-    ("main interface", re.search(r'<script type="module">([\\s\\S]*?)</script>', index)),
-    ("retro player", re.search(r'<script>([\\s\\S]*?)</script>', retro_player)),
+    ("main interface", re.search(r'<script type="module">([\s\S]*?)</script>', index)),
+    ("retro player", re.search(r'<script>([\s\S]*?)</script>', retro_player)),
 ):
     if not source:
         raise SystemExit(f"Cannot find embedded script for {label}")
