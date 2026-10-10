@@ -65,9 +65,9 @@ for system in manifest:
         raise SystemExit(f"Console {system} absent from selector")
 
 sources = {
-    "index": re.search(r'<script type="module">([\\s\\S]*?)</script>', main),
-    "Azahar player": re.search(r'<script>([\\s\\S]*?)</script>', azahar_player),
-    "retro player": re.search(r'<script>([\\s\\S]*?)</script>', retro_player),
+    "index": re.search(r'<script type="module">([\s\S]*?)</script>', main),
+    "Azahar player": re.search(r'<script>([\s\S]*?)</script>', azahar_player),
+    "retro player": re.search(r'<script>([\s\S]*?)</script>', retro_player),
 }
 for label, match in sources.items():
     if not match:
