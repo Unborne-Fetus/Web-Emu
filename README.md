@@ -2,9 +2,25 @@
 
 **Web Emu** is a browser-based emulator for Game Boy, Game Boy Color, Game Boy Advance, and an experimental browser version of Nintendo 2DS / 3DS emulation using Azahar through EmulatorJS.
 
-The legacy GB/GBC/GBA launcher aims to be usable by double-clicking `index.html`. **Azahar 3DS is different**: it needs WebAssembly threads, cross-origin isolation, WebGL 2, and HTTPS (or localhost). It cannot run from a standalone `file://` HTML file.
+**Offline 2DS/3DS support is available as a separate, complete Windows ZIP build.** Azahar needs threaded WebAssembly, cross-origin isolation and WebGL 2, so Windows runs a localhost-only web server automatically when you double-click the launcher. It works without an Internet connection after you download and extract the package. Standalone `file://` HTML cannot provide these features.
 
 > **Development status: early alpha.** The interface and mGBA integration are under development. ROM boot, audio, and save persistence have **not yet passed end-to-end testing**. Do not treat the current build as reliable for important saves.
+
+## Play completely offline on Windows (GB, GBC, GBA, 2DS, 3DS)
+
+1. Open [Actions → Deploy Web Emu](https://github.com/Unborne-Fetus/Web-Emu/actions/workflows/pages.yml), select a **successful** run, and download **Web-Emu-Offline-All-Systems** from the artifacts.
+2. **Extract the entire ZIP** to a folder, not just the launcher.
+3. Double-click **`Start-Web-Emu.cmd`**. The included Node Windows runtime starts a local browser service and opens **http://127.0.0.1:8765/**.
+4. Open the **2DS / 3DS** tab for a compatible `.3ds`, `.cci`, or `.cxi` game, or use the **GB / GBC / GBA** tab.
+5. Keep the launcher window open while playing. Closing it stops the local server. **You can disconnect from the Internet and keep playing.**
+
+**No installer, npm, Python, GitHub Pages, separate Node download, or Internet connection is required after extracting the completed ZIP.** No games or proprietary Nintendo keys/firmware are included. Use game images you are authorized to use.
+
+The command window is intentional, not an error: it runs a small web server **bound only to your own computer (127.0.0.1)**. The local server sends COOP/COEP security headers so Azahar can use `SharedArrayBuffer` without a website. This does not publish anything to the Internet.
+
+**Your save data:** browser storage is tied to the address **127.0.0.1:8765** and the browser profile. Keep the same browser and launcher port for saved games to reappear. Export your saves from the emulator's menu for backups; deleting browser site data can delete saves. Azahar browser save functionality is still experimental and has not been verified for every game.
+
+**Limitations:** this offline Windows bundle is a **folder**, not a single `index.html`; it must keep its files together. It is intended for Windows 10/11 x64 and a WebGL 2-capable Chrome/Edge browser. Direct `.cia` installation and encrypted game images are not supported by this launcher. Real 3DS gameplay and battery-save restoration require additional end-to-end verification.
 
 ## Interface
 
@@ -36,15 +52,15 @@ Save states are separate from the game's battery save. Export any important save
 
 ## Nintendo 2DS / 3DS (Azahar browser runtime)
 
-The **2DS / 3DS** tab uses the actual [Azahar](https://github.com/azahar-emu/azahar) emulator port bundled through [EmulatorJS](https://github.com/EmulatorJS/EmulatorJS). This is a **nightly, experimental threaded WASM core**, not a mock display. It is built into the **GitHub Pages deployment** by `.github/workflows/pages.yml` and intentionally not embedded in the one-file offline download.
+The **2DS / 3DS** tab (both hosted and offline Windows) uses the actual [Azahar](https://github.com/azahar-emu/azahar) emulator port bundled through [EmulatorJS](https://github.com/EmulatorJS/EmulatorJS). This is a **nightly, experimental threaded WASM core**, not a mock display. It is built into the **GitHub Pages deployment** by `.github/workflows/pages.yml` and intentionally not embedded in the one-file offline download.
 
-- Open the **hosted GitHub Pages site** through HTTPS, then choose **2DS / 3DS**.
+- Open either the **hosted GitHub Pages site** through HTTPS **or the offline Windows package's localhost URL**, then choose **2DS / 3DS**.
 - Select your own compatible **`.3ds`, `.cci` or `.cxi`** game image.
 - Azahar loads inside its own iframe and provides its dual-screen layout, lower-screen touch input, controller mapping, and emulation menu.
 - ROM data is handled locally in the browser; there is no ROM upload endpoint. EmulatorJS stores supported saves in the browser's own storage; back up important game progress with its export options.
 - **`.cia` installer packages aren't supported** by this direct-ROM launcher. Files that require decryption will not launch as-is.
-- Azahar requires `crossOriginIsolated === true`, `SharedArrayBuffer`, and **WebGL 2**. The bundled [coi-serviceworker](https://github.com/gzuidhof/coi-serviceworker) supplies COOP/COEP headers on GitHub Pages; the first hosted page load may reload once. A regular local web server without those headers is insufficient.
-- It is not part of the standalone offline index. Devices with little RAM, low WebGL support, or older mobile browsers may not work. Game compatibility and save persistence are **not yet verified end to end**.
+- Azahar requires `crossOriginIsolated === true`, `SharedArrayBuffer`, and **WebGL 2**. The bundled [coi-serviceworker](https://github.com/gzuidhof/coi-serviceworker) supplies COOP/COEP headers on GitHub Pages; the first hosted page load may reload once. The offline launcher supplies equivalent headers through its Node-based localhost server. A regular local server without those headers is insufficient.
+- 3DS is **included in the complete offline Windows ZIP**, but not the old standalone offline index. Devices with little RAM, low WebGL support, or older mobile browsers may not work. Game compatibility and save persistence are **not yet verified end to end**.
 
 **How the deploy works:** the Pages workflow downloads matching EmulatorJS nightly `loader.js`, frontend JS/CSS, archive helpers, and `azahar-thread-wasm.data` into `vendor/emulatorjs/data/`, checks their existence, and deploys them on the same origin as the website. No commercial games, official firmware, keys, or Nintendo BIOS data are bundled.
 
@@ -66,8 +82,8 @@ The project is moving toward two distribution formats:
 
 | Format | Intended result | Status |
 | --- | --- | --- |
-| **Single `index.html`** | Embedded JavaScript and WASM, double-click offline | **Experimental Actions artifact; not boot-verified** |
-| **Offline folder** | `index.html` plus bundled local JavaScript and WebAssembly files; no CDN needed | **Local-loading path prepared; core files not yet vendored** |
+| **Single `index.html` (GB/GBC/GBA only)** | Embedded mGBA, double-click offline | **Experimental Actions artifact; not boot-verified** |
+| **Offline Windows folder (GB/GBC/GBA/3DS)** | Bundled Azahar + mGBA files and local runtime; double-click `Start-Web-Emu.cmd` | **Built by GitHub Actions; game boot not yet verified** |
 | Hosted website | Open through HTTPS, with persistent browser storage where supported | **Early alpha** |
 
 The launcher now checks for **`vendor/mgba-sdk.js`** and, when available, uses it together with **`vendor/mgba.js`** and **`vendor/mgba.wasm`**. If the local SDK is missing, it falls back to the pinned public CDN. These files must be a compatible, properly bundled release of the mGBA wrapper; copying arbitrary JavaScript or WASM files into `vendor/` will not work.
@@ -103,7 +119,7 @@ The mGBA wrapper can run GBA games without a supplied official BIOS using its bu
 3. Package the runtime into a self-contained HTML download, if browser security restrictions permit.
 4. Test and strengthen save persistence and provide portable backup/export.
 5. Enable speed controls, refine touchscreen/gamepad support, and perform cross-browser testing.
-6. Verify Azahar 3DS ROM boot, touch controls, audio, frame rate, saving, and cross-browser compatibility on the hosted site.
+6. Verify Azahar 3DS ROM boot, touch controls, audio, frame rate and saves on **both** the hosted site and offline Windows ZIP.
 
 ## Legal and credits
 
