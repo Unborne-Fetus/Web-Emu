@@ -67,10 +67,15 @@ jobs:
           # Bundle the runtime at deploy-time to keep all WebAssembly, JS and CSS
           # same-origin with GitHub Pages' cross-origin isolation service worker.
           base=https://cdn.emulatorjs.org/nightly/data
-          mkdir -p vendor/emulatorjs/data/cores
+          mkdir -p vendor/emulatorjs/data/cores vendor/emulatorjs/data/compression
           for asset in loader.js emulator.min.js emulator.min.css version.json; do
             curl --fail --location --silent --show-error --retry 3 "$base/$asset" -o "vendor/emulatorjs/data/$asset"
             test -s "vendor/emulatorjs/data/$asset"
+          done
+          # EmulatorJS may need its worker utilities for compressed homebrew archives.
+          for asset in extractzip.js extract7z.js libunrar.js libunrar.wasm; do
+            curl --fail --location --silent --show-error --retry 3 "$base/compression/$asset" -o "vendor/emulatorjs/data/compression/$asset"
+            test -s "vendor/emulatorjs/data/compression/$asset"
           done
           curl --fail --location --silent --show-error --retry 3 "$base/cores/azahar-thread-wasm.data" -o vendor/emulatorjs/data/cores/azahar-thread-wasm.data
           test "$(stat -c '%s' vendor/emulatorjs/data/cores/azahar-thread-wasm.data)" -gt 1000000
