@@ -30,6 +30,9 @@ for rel in required:
     path = runtime / rel
     if not path.is_file() or path.stat().st_size < 10:
         raise SystemExit(f"Missing browser emulator asset: {path}")
+psp_assets = runtime / "cores/ppsspp-assets.zip"
+if psp_assets.stat().st_size < 5_000_000 or psp_assets.open("rb").read(4)[:2] != b"PK":
+    raise SystemExit("Missing / invalid PPSSPP assets ZIP: PSP cannot initialize offline")
 if (runtime / "cores/azahar-thread-wasm.data").stat().st_size < 1_000_000:
     raise SystemExit("Azahar WebAssembly data is too small")
 if len(manifest) != 27:
