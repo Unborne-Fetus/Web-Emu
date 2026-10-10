@@ -94,7 +94,7 @@ button,input,summary{touch-action:manipulation}button:focus-visible,input:focus-
 .three-ds-panel:fullscreen .three-ds-host{height:calc(100dvh - 150px);max-height:none}
 @media(max-width:650px){.three-ds-host{height:clamp(380px,67dvh,780px)}}
 </style><main><header><span>▣ WEB EMU <small>/ MULTI-CONSOLE</small></span><small>BROWSER EDITION</small></header>
-<nav class="system-tabs" aria-label="Emulator systems"><button type="button" id="tabRetro" class="selected" aria-selected="true">GB / GBC / GBA</button><button type="button" id="tab3ds" aria-selected="false">2DS / 3DS</button></nav><section id="threeDsPanel" class="three-ds-panel" hidden><h2>Nintendo 2DS / 3DS · Azahar</h2><p>Play your own supported .3ds, .cci or .cxi game images in the browser. The 2DS and 3DS share the same game library. The threaded Azahar core needs a modern browser and WebGL 2. Use the hosted HTTPS site or the offline Windows launcher (Start-Web-Emu.cmd).</p><div id="threeDsSplash" class="three-ds-screens"><div class="three-ds-screen">Upper screen<small>400 × 240</small></div><div class="three-ds-screen bottom">Touchscreen<small>320 × 240</small></div></div><div id="threeDsHost" class="three-ds-host" hidden aria-label="Nintendo 3DS emulator, both screens and touch controls"></div><div class="actions"><button id="choose3ds" class="primary" type="button">Open 2DS / 3DS game</button><button id="stop3ds" type="button" disabled>Stop game</button><button id="fullscreen3ds" type="button" disabled>⛶ Fullscreen</button></div><p id="threeDsStatus" role="status" aria-live="polite">Checking Azahar browser runtime…</p><p><small>Your game file remains on your device. Use the emulator menu for controllers and save options. CIA installers are not supported by this launcher, and encrypted images may not boot.</small></p></section><section class="stage" id="stage"><button class="corner left" id="fullscreen" aria-label="Fullscreen">⛶</button><button class="corner right" id="settingsButton" aria-label="Settings" aria-expanded="false">⚙</button>
+<nav class="system-tabs" aria-label="Emulator systems"><button type="button" id="tabRetro" class="selected" aria-selected="true">GB / GBC / GBA</button><button type="button" id="tab3ds" aria-selected="false">2DS / 3DS</button><button type="button" id="tabClassic" aria-selected="false">Classic consoles</button></nav><section id="classicPanel" class="three-ds-panel" hidden><h2>Classic consoles · offline libretro cores</h2><p>Nintendo DS, NES, SNES, Nintendo 64, Sega Genesis, Game Gear, Master System, Atari 2600, and Virtual Boy. Open the complete offline ZIP with Start-Web-Emu.cmd, or use the hosted site.</p><label for="classicSystem">Console</label> <select id="classicSystem"><option value="nds">Nintendo DS</option><option value="nes">NES</option><option value="snes">SNES</option><option value="n64">Nintendo 64</option><option value="segaMD">Sega Genesis</option><option value="segaGG">Game Gear</option><option value="segaMS">Sega Master System</option><option value="atari2600">Atari 2600</option><option value="vb">Virtual Boy</option></select><div id="classicHost" class="three-ds-host" hidden></div><div class="actions"><button type="button" id="classicChoose" class="primary">Open game</button><button type="button" id="classicStop" disabled>Stop game</button><button type="button" id="classicFullscreen" disabled>⛶ Fullscreen</button></div><p id="classicStatus" role="status" aria-live="polite">Select a console and a game file.</p><input id="classicFile" type="file" accept=".nds,.nes,.sfc,.smc,.n64,.z64,.v64,.md,.gen,.bin,.gg,.sms,.a26,.vb" hidden></section><section id="threeDsPanel" class="three-ds-panel" hidden><h2>Nintendo 2DS / 3DS · Azahar</h2><p>Play your own supported .3ds, .cci or .cxi game images in the browser. The 2DS and 3DS share the same game library. The threaded Azahar core needs a modern browser and WebGL 2. Use the hosted HTTPS site or the offline Windows launcher (Start-Web-Emu.cmd).</p><div id="threeDsSplash" class="three-ds-screens"><div class="three-ds-screen">Upper screen<small>400 × 240</small></div><div class="three-ds-screen bottom">Touchscreen<small>320 × 240</small></div></div><div id="threeDsHost" class="three-ds-host" hidden aria-label="Nintendo 3DS emulator, both screens and touch controls"></div><div class="actions"><button id="choose3ds" class="primary" type="button">Open 2DS / 3DS game</button><button id="stop3ds" type="button" disabled>Stop game</button><button id="fullscreen3ds" type="button" disabled>⛶ Fullscreen</button></div><p id="threeDsStatus" role="status" aria-live="polite">Checking Azahar browser runtime…</p><p><small>Your game file remains on your device. Use the emulator menu for controllers and save options. CIA installers are not supported by this launcher, and encrypted images may not boot.</small></p></section><section class="stage" id="stage"><button class="corner left" id="fullscreen" aria-label="Fullscreen">⛶</button><button class="corner right" id="settingsButton" aria-label="Settings" aria-expanded="false">⚙</button>
 <div class="console-picker"><label for="consoleSelect">Console</label><select id="consoleSelect"><option value="auto">Auto-detect</option><option value="gb">Game Boy / Game Boy Color</option><option value="gba">Game Boy Advance</option><option value="ds" disabled>Nintendo DS — core pending</option><option value="3ds" disabled>Nintendo 2DS / 3DS — use tab above</option></select><span id="consoleSupport">GB/GBC & GBA here · 2DS/3DS in the tab above</span></div><div class="screen" id="drop"><canvas id="game" width="240" height="160"></canvas><div class="empty" id="empty"><h1>Web Emu</h1><p class="muted">Play .gb, .gbc, and .gba games. For 2DS / 3DS, select the tab above.</p><button class="primary" id="open">Open file</button><small>or drag and drop a supported ROM file</small></div></div>
 <div id="saveIndicator" class="save-indicator" role="status" aria-live="polite" hidden><span class="spin">⟳</span><span id="saveIndicatorText">Saving…</span></div><div id="saveWarning" class="save-warning" hidden><strong>Automatic Saving</strong><p id="saveWarningText">Web Emu periodically stores your game’s battery save in your browser. Do not close the page while the saving symbol is visible. Browser storage can be cleared; export a .sav backup for important progress.</p><button id="dismissSaveWarning" type="button">Continue</button></div><div class="bar"><div class="speed-wrap"><button class="speed-label" id="speedLabel" aria-haspopup="true" aria-expanded="false">SPEED ▾</button><div class="speed-menu" id="speedMenu" hidden></div><input aria-label="Normal speed, 1 to 4 times" type="range" min="1" max="4" step="1" value="1" disabled title="Available when speed-enabled mGBA runtime loads" id="speed"> <output id="speedtext">1×</output></div><label aria-label="Volume">🔊 <input type="range" min="0" max="100" value="75" id="volume"><output id="voltext">75%</output></label></div>
 <div class="touch"><div class="pad"><button class="up" data-key="ArrowUp">↑</button><button class="leftkey" data-key="ArrowLeft">←</button><button class="rightkey" data-key="ArrowRight">→</button><button class="down" data-key="ArrowDown">↓</button></div><div class="ab"><button data-key="x">A</button><button data-key="z">B</button><button data-key="Enter">Start</button><button data-key="ShiftRight">Select</button><button data-key="a">L</button><button data-key="s">R</button></div></div>
@@ -208,10 +208,14 @@ setInterval(()=>{if(activeGameId){let saved=0;try{saved=Number(localStorage.getI
 window.addEventListener('keydown',e=>{if(!engine||e.repeat||e.ctrlKey||e.altKey||e.metaKey||/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName||''))return;const actions={F6:()=> $('slotSave').click(),F7:()=> $('slotLoad').click(),F8:rewindGame,F9:()=> $('shot').click(),KeyP:()=> $('pause').click()};if(actions[e.code]){e.preventDefault();actions[e.code]()}},true);
 
 function showSystemTab(tab){
- const three=tab==='3ds';
- $('tabRetro').classList.toggle('selected',!three);$('tab3ds').classList.toggle('selected',three);
- $('tabRetro').setAttribute('aria-selected',String(!three));$('tab3ds').setAttribute('aria-selected',String(three));
- $('threeDsPanel').hidden=!three;$('stage').hidden=three;
+ const three=tab==='3ds', classic=tab==='classic', retro=!three&&!classic;
+ for (const [id,selected] of [['tabRetro',retro],['tab3ds',three],['tabClassic',classic]]) {
+  $(id).classList.toggle('selected',selected);
+  $(id).setAttribute('aria-selected',String(selected));
+ }
+ $('threeDsPanel').hidden=!three;
+ $('classicPanel').hidden=!classic;
+ $('stage').hidden=!retro;
  try{sessionStorage.setItem('webemu-system-tab',tab)}catch(e){}
 }
 $('tabRetro').onclick=()=>showSystemTab('retro');
@@ -277,6 +281,55 @@ $('threeDsFile').onchange=async e=>{
  const file=e.target.files?.[0];e.target.value='';
  if(file)await launch3dsFile(file);
 };
+
+// Classic consoles use genuine local EmulatorJS/libretro WASM cores.
+let classicInstance = null, classicLoading = false;
+async function stopClassic() {
+  if (classicLoading) return;
+  const old = classicInstance;
+  classicInstance = null;
+  $('classicStop').disabled = true;
+  $('classicFullscreen').disabled = true;
+  if (old) { try { await old.stop(); } catch (error) { console.warn(error); } }
+  $('classicHost').hidden = true;
+  $('classicStatus').textContent = 'Stopped. Choose another game.';
+}
+$('classicChoose').onclick = () => $('classicFile').click();
+$('classicStop').onclick = () => void stopClassic();
+$('classicFullscreen').onclick = async () => {
+  if (classicInstance) {
+    try { await classicInstance.fullscreen(); }
+    catch (error) { $('classicStatus').textContent = 'Fullscreen failed: ' + error.message; }
+  }
+};
+$('classicFile').onchange = async event => {
+  const file = event.target.files?.[0];
+  event.target.value = '';
+  if (!file || classicLoading) return;
+  if (classicInstance) await stopClassic();
+  classicLoading = true;
+  $('classicChoose').disabled = true;
+  try {
+    const mod = await import('./cores/retro.js');
+    const system = $('classicSystem').value;
+    $('classicStatus').textContent = 'Starting ' + mod.SYSTEMS[system].label + '…';
+    classicInstance = await mod.createRetroEmulator({
+      mount: $('classicHost'), system, file,
+      onStatus: message => { $('classicStatus').textContent = message; }
+    });
+    $('classicStop').disabled = false;
+    $('classicFullscreen').disabled = false;
+  } catch (error) {
+    console.error('Classic emulator failed', error);
+    $('classicHost').hidden = true;
+    $('classicStatus').textContent = 'Startup failed: ' + error.message;
+  } finally {
+    classicLoading = false;
+    $('classicChoose').disabled = false;
+  }
+};
+$('tabClassic').onclick = () => showSystemTab('classic');
+
 void get3dsCore();
-try{if(sessionStorage.getItem('webemu-system-tab')==='3ds')showSystemTab('3ds')}catch(e){}
+try{if(['3ds','classic'].includes(sessionStorage.getItem('webemu-system-tab')))showSystemTab(sessionStorage.getItem('webemu-system-tab'))}catch(e){}
 </script></html>
