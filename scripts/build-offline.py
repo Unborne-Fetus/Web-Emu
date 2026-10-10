@@ -5,6 +5,8 @@ from base64 import b64encode
 
 root = Path(".")
 html = (root / "index.html").read_text(encoding="utf-8")
+# The single-file build has no standalone service worker and cannot support 3DS threads.
+html = html.replace('<script src="./coi-serviceworker.js"></script>', "")
 sdk = (root / "vendor/mgba-sdk-offline.js").read_text(encoding="utf-8")
 runtime = (root / "vendor/mgba.js").read_text(encoding="utf-8")
 wasm = (root / "vendor/mgba.wasm").read_bytes()
