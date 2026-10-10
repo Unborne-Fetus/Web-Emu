@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Static deployment smoke test; this does NOT verify real 3DS game boot."""
+"""Static deployment smoke test for 3DS and nine classic systems; not real ROM boot."""
 from pathlib import Path
 import re
 import subprocess
@@ -29,15 +29,41 @@ if 'crossOriginIsolated' not in adapter.read_text(encoding="utf-8"):
     raise SystemExit("Missing cross-origin isolation probe")
 if 'id="threeDsHost"' not in main or 'coi-serviceworker.js' not in main:
     raise SystemExit("3DS host/isolation bootstrap missing from index")
+retro_adapter = Path("cores/retro.js")
+retro_player = Path("cores/retro-player.html")
+if not retro_adapter.is_file() or not retro_player.is_file():
+    raise SystemExit("Classic consoles adapter/player missing")
+retro_source = retro_player.read_text(encoding="utf-8")
+adapter_source = retro_adapter.read_text(encoding="utf-8")
+if 'id="classicSystem"' not in main or 'id="tabClassic"' not in main:
+    raise SystemExit("Classic consoles selector missing from index")
+retro_cores = (
+    "desmume", "fceumm", "snes9x", "mupen64plus_next",
+    "genesis_plus_gx", "stella2014", "beetle_vb",
+)
+for name in retro_cores:
+    if name not in adapter_source or name not in retro_source:
+        raise SystemExit(f"Missing libretro core mapping: {name}")
+    report = runtime / "cores" / "reports" / f"{name}.json"
+    if not report.is_file() or report.stat().st_size < 10:
+        raise SystemExit(f"Missing libretro build report: {report}")
+    for suffix in ("-wasm", "-legacy-wasm", "-thread-wasm", "-thread-legacy-wasm"):
+        data = runtime / "cores" / f"{name}{suffix}.data"
+        if not data.is_file() or data.stat().st_size < 100_000:
+            raise SystemExit(f"Missing/incomplete bundled libretro core: {data}")
+
 script = re.search(r'<script type="module">([\s\S]*?)</script>', main)
 player_script = re.search(r'<script>([\s\S]*?)</script>', player)
-if not script or not player_script:
+retro_script = re.search(r'<script>([\s\S]*?)</script>', retro_source)
+if not script or not player_script or not retro_script:
     raise SystemExit("Could not find embedded JavaScript in emulator pages")
 for name, source in [
     ("index module", script.group(1)),
     ("3DS player", player_script.group(1)),
     ("3DS adapter", adapter.read_text(encoding="utf-8")),
     ("COI helper", sw.read_text(encoding="utf-8")),
+    ("Classic player", retro_script.group(1)),
+    ("Classic adapter", adapter_source),
 ]:
     result = subprocess.run(
         ["node", "--input-type=module", "--check"],
@@ -46,4 +72,4 @@ for name, source in [
     if result.returncode:
         raise SystemExit(f"Syntax error in {name}:\n{result.stderr}")
     print(f"OK: {name} syntax")
-print("OK: Azahar 3DS frontend/core files present (ROM boot still untested)")
+print("OK: Azahar 3DS and nine classic systems with seven full local libretro core variants (ROM boot still untested)")
