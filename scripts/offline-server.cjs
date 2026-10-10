@@ -114,7 +114,7 @@ server.on('error', error => {
 
 server.listen(port, host, () => {
   console.log('=======================================================');
-  console.log(' WEB EMU - OFFLINE (GB / GBC / GBA / 2DS / 3DS)');
+  console.log(' WEB EMU - OFFLINE (32 CONSOLE VARIANTS)');
   console.log('=======================================================');
   console.log('Open in your browser: ' + url);
   console.log('Everything is served from this extracted folder.');
