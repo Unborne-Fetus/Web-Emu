@@ -157,7 +157,7 @@ async function openGame(file){
    try {
      const mod=await import('./cores/retro.js');
      const compatible=Object.entries(mod.SYSTEMS).filter(([id,conf])=>conf.extensions.includes(extension));
-     if(!compatible.length){say('Unsupported file extension. Select a console to see supported game formats.');return}
+     if(!compatible.length){const ext='.'+extension;const hint=extension==='bps'?'This is a BPS patch, not a playable game. Open the compiled .gba ROM instead.':extension==='zip'?'This is a ZIP archive. Extract it and open the .gba ROM inside.':'Open a supported ROM such as .gba, .gb, or .gbc, or select the appropriate console tab.';say('Cannot open '+file.name+' ('+ext+'). '+hint);return}
      const preferred=$('classicSystem').value;
      const selected=compatible.find(([id])=>id===preferred);
      const choice=selected|| (compatible.length===1?compatible[0]:null);
