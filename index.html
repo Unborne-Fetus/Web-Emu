@@ -173,31 +173,36 @@ async function openGame(file){
  }
  const family=extension==='gba'?'gba':'gb';
  if(file.size<192||file.size>(family==='gba'?33554432:8388608)){say('Invalid '+family.toUpperCase()+' ROM size');return}const selected=$('consoleSelect').value;if(selected!=='auto'&&selected!==family){say('Selected console does not match this ROM. Select Auto-detect or '+(family==='gb'?'Game Boy / Color':'Game Boy Advance')+'.');return}const id=++request;clearTimeout(saveIndicatorTimer);$('saveIndicator').hidden=true;$('saveWarning').hidden=true;ready(false);say('Loading emulator…');try{const bytes=new Uint8Array(await file.arrayBuffer());void rememberGame(file,bytes);sdk=await loadCore();if(id!==request)return;if(!sdk.load)throw Error('Core module unavailable');if(engine){commitPlaytime();engine.pause();await Promise.resolve(engine.destroy());engine=null}engine=await sdk.load({canvasEl:$('game'),jsUrl:window.__WEB_EMU_OFFLINE__?'data:text/javascript,':localCore?'./vendor/mgba.js':cdn+'/dist/mgba/mgba.js',wasmUrl:window.__WEB_EMU_OFFLINE__?.wasmUrl||(localCore?'./vendor/mgba.wasm':cdn+'/dist/mgba/mgba.wasm'),onEvent:e=>{if(e.type==='frame'&&typeof e.fps==='number')frameFps=e.fps},assets:{rom:bytes},persist:storage?'opfs':undefined,storageNamespace:ns(bytes),options:{system:family,aspect:'native',volume:Number($('volume').value)/100,renderFilter:$('smooth').checked?'smooth':'pixelated',gamepads:true,escMenu:false}});if(id!==request){engine.destroy();engine=null;return}filename=file.name.replace(/\.(gba|gbc|gb)$/i,'');activeGameId=ns(bytes);playStart=Date.now();engine.start();void refreshBackups();if(typeof engine.setSaveObserver==='function')engine.setSaveObserver(updateSaveIndicator);if(typeof engine.setAutosave==='function')engine.setAutosave(autosaveEnabled);if(typeof engine.setControllerProfile==='function')engine.setControllerProfile(profile);applyKeys();if(typeof engine.setSpeed==='function')engine.setSpeed(selectedSpeed);else say('This emulator runtime does not support speed control. Check that the custom-core build succeeded.');normalSpeedToggle=false;paused=false;$('empty').hidden=true;$('pause').textContent='Pause';ready(true);displaySaveWarning();say('Playing '+file.name+(localCore?' · Local core':' · Online core')+(storage?' · Save storage accessible':' · Save storage unavailable')+(typeof engine.setSpeed==='function'?' · Speed available':' · Speed unavailable: custom core failed or was not loaded'));$('saveInfo').textContent=storage&&typeof engine.flushSave==='function'?(autosaveEnabled?'Automatic saves on; use Save now to verify writing.':'Automatic saves off; manual backup available.'):'Save verification unavailable with this core. Do not rely on autosave without a backup.'}catch(e){console.error(e);const detail=String(e?.message||e);if(location.protocol==='file:'&&!window.__WEB_EMU_OFFLINE__&&/worklet|blob:null|cross.origin/i.test(detail)){say('Browser blocked mGBA audio in local-file mode. Brisk Emerald is not the cause. Open the HTTPS Web Emu page for now; true offline support needs a different worklet-loading method.')}else say('Could not boot: '+detail);$('saveWarning').hidden=true;if(!engine)$('empty').hidden=false}}
-// PokéStudio's optional one-click ROM handoff. Both official GitHub Pages
-// applications share an origin. Do not accept ROMs from arbitrary websites.
+// PokéStudio's same-origin ROM handoff. BroadcastChannel works even when
+// coi-serviceworker cross-origin isolation severs window.opener.
 function enablePokestudioBridge(){
  const nonce=new URLSearchParams(location.search).get('pokestudio');
- if(!nonce||!/^[\w-]{20,120}$/.test(nonce)||!window.opener)return;
+ if(!nonce||!/^[\w-]{20,120}$/.test(nonce))return;
  const sender=window.opener,origin=location.origin;
+ const channel=typeof BroadcastChannel==='function'?new BroadcastChannel('pokestudio-webemu-'+nonce):null;
+ if(!sender&&!channel)return;
  let received=false;
+ const respond=message=>{
+  if(channel)channel.postMessage(message);
+  if(sender){try{sender.postMessage(message,origin)}catch{}}
+ };
  const announce=()=>{
-  if(received||sender.closed)return;
-  try{sender.postMessage({type:'webemu:ready',nonce},origin)}catch{}
+  if(received)return;
+  respond({type:'webemu:ready',nonce});
  };
  $('empty').querySelector('small').textContent='Waiting for a GBA build from PokéStudio. You can still open your own file.';
  say('Waiting for PokéStudio to send the selected ROM…');
  const interval=setInterval(announce,1500);
- window.addEventListener('message',async event=>{
-  if(event.origin!==origin||event.source!==sender||event.data?.nonce!==nonce)return;
-  const data=event.data;
+ const handle=async data=>{
+  if(!data||data.nonce!==nonce)return;
   if(data.type==='pokestudio:failed'){
-   say('PokéStudio could not fetch the build: '+String(data.message||'Try choosing the ROM manually.').slice(0,240));
+   say('PokéStudio could not fetch the build: '+String(data.message||'Try choosing a ROM manually.').slice(0,240));
    return;
   }
   if(data.type!=='pokestudio:rom'||received)return;
   if(!(data.rom instanceof ArrayBuffer)||data.rom.byteLength<192||data.rom.byteLength>33554432||
-   !/^[\w .()'-]+\.gba$/i.test(String(data.name||''))){
-   sender.postMessage({type:'webemu:error',nonce,message:'Invalid GBA transfer'},origin);
+     !/^[\w .()'-]+\.gba$/i.test(String(data.name||''))){
+   respond({type:'webemu:error',nonce,message:'Invalid GBA transfer'});
    return;
   }
   received=true;clearInterval(interval);
@@ -208,12 +213,17 @@ function enablePokestudioBridge(){
    say('Loading '+file.name+' from PokéStudio…');
    await openGame(file);
    if(!engine)throw Error('The emulator could not start this ROM.');
-   sender.postMessage({type:'webemu:received',nonce},origin);
+   respond({type:'webemu:received',nonce});
   }catch(error){
    say('Could not load PokéStudio ROM: '+error.message);
-   sender.postMessage({type:'webemu:error',nonce,message:String(error.message)},origin);
+   respond({type:'webemu:error',nonce,message:String(error.message)});
   }
+ };
+ window.addEventListener('message',event=>{
+  if(!sender||event.origin!==origin||event.source!==sender)return;
+  void handle(event.data);
  });
+ if(channel)channel.onmessage=event=>void handle(event.data);
  announce();
 }
 enablePokestudioBridge();
