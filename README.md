@@ -202,3 +202,11 @@ Web Emu does **not** distribute commercial ROMs, Nintendo firmware, keys or BIOS
 GB/GBC/GBA emulation uses [mGBA](https://github.com/mgba-emu/mgba) and the [wasm-gaming mGBA browser wrapper](https://github.com/wasm-gaming/mGBA-wasm), licensed under **MPL-2.0**. Other consoles use EmulatorJS and multiple open-source libretro cores, including FCEUmm, Snes9x, DeSmuME, Mupen64Plus-Next, Genesis Plus GX, Stella 2014, Beetle VB, PCSX ReARMed, PPSSPP, FBNeo, DOSBox Pure, and others, subject to their respective upstream licenses. 2DS/3DS emulation uses **Azahar through EmulatorJS**, which include **GPL-3.0-licensed components**; the Pages build includes the EmulatorJS GPL license file and the upstream project links provide source code. The [coi-serviceworker](https://github.com/gzuidhof/coi-serviceworker) is MIT licensed; its notice is in `licenses/`. Redistributors must comply with all applicable component licenses.
 
 This project is independent of Nintendo and is not affiliated with or endorsed by Nintendo.
+
+## PokéStudio Web: play the most recent Brisk Emerald build
+
+The hosted Web Emu accepts an optional, same-origin **PokéStudio** handoff. In [PokéStudio Web](https://unborne-fetus.github.io/PokeStudio-Web/), connect your Brisk Emerald repository and click **▶ Play in Web Emu**. PokéStudio selects the newest successful, unexpired GBA artifact from the active branch of the ROM's GitHub Actions workflow. It downloads the artifact ZIP and passes the extracted ROM bytes directly to the new Web Emu tab, which boots the GBA core. The ROM is not placed in the URL, and the GitHub token stays within PokéStudio.
+
+The handoff checks a randomly generated one-time session ID and the expected same-origin browser context. A `BroadcastChannel` fallback works when Web Emu's cross-origin isolation severs `window.opener`. It does not allow arbitrary third-party websites to push game data into Web Emu.
+
+Browsers can block GitHub's temporary artifact download redirect. If that happens, use PokéStudio's artifact link to download the ZIP yourself, then select the ZIP (or extracted `.gba`) in PokéStudio's Web Emu dialog. This transfers the game to the existing emulator tab. The latest *successful* build is used, not uncommitted editor changes or a failed workflow run. Only game images the user is authorized to use should be loaded.
