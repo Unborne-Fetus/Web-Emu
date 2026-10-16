@@ -149,7 +149,7 @@ function ready(ok){$('autosave').disabled=!!ok&&typeof engine?.setAutosave!=='fu
 function download(data,name){const blob=data instanceof Blob?data:new Blob([data]);const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),3000)}
 async function openGame(file){
  if(!file)return;
- const extension=(file.name.match(/\\.([^.]+)$/)?.[1]||'').toLowerCase();
+ const extension=String(file.name||'').trim().split('.').pop().toLowerCase();
  if(['3ds','cci','cxi','cia'].includes(extension)){
    showSystemTab('3ds');await launch3dsFile(file);return;
  }
